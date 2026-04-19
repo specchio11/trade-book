@@ -136,6 +136,7 @@ export default function App() {
             onReloadProduct={reloadProduct}
             onAppendProduct={appendProduct}
             onRemoveProduct={removeProductLocal}
+            onPatchProduct={patchProduct}
             onReorderProductsLocal={reorderProductsLocal}
             onImageModal={setImageModal}
           />
@@ -149,6 +150,8 @@ export default function App() {
             onReloadProduct={reloadProduct}
             onAppendSwap={appendSwap}
             onRemoveSwap={removeSwapLocal}
+            onPatchSwap={patchSwap}
+            onPatchProduct={patchProduct}
             onReorderSwapsLocal={reorderSwapsLocal}
             onEditMethods={() => setShowEditMethods(true)}
             onImageModal={setImageModal}

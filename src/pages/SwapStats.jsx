@@ -29,7 +29,7 @@ function InlineEdit({ value, onCommit, placeholder }) {
   );
 }
 
-export default function SwapStats({ swaps, products, methods, onUpdate, onReloadSwap, onReloadProduct, onAppendSwap, onRemoveSwap, onReorderSwapsLocal, onEditMethods, onImageModal }) {
+export default function SwapStats({ swaps, products, methods, onUpdate, onReloadSwap, onReloadProduct, onAppendSwap, onRemoveSwap, onPatchSwap, onPatchProduct, onReorderSwapsLocal, onEditMethods, onImageModal }) {
   const { message } = App.useApp();
   const [groupBy, setGroupBy] = useState(null);
   const [registerSwap, setRegisterSwap] = useState(null);
@@ -46,12 +46,16 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
     });
   };
 
-  const handleUpdate = async (id, field, value) => {
-    await api.updateSwap(id, { [field]: value });
-    onReloadSwap(id);
+  // Optimistic: patch local state, then fire-and-forget the network call. On error, refetch.
+  const handleUpdate = (id, field, value) => {
+    onPatchSwap({ id, [field]: value });
+    api.updateSwap(id, { [field]: value }).catch(() => {
+      message.error('保存失败');
+      onReloadSwap(id);
+    });
   };
 
-  const handleItemQtyChange = async (swap, productId, newQty) => {
+  const handleItemQtyChange = (swap, productId, newQty) => {
     const product = products.find(p => p.id === productId);
     const existing = swap.items?.find(i => i.product_id === productId);
     const oldQty = existing?.quantity || 0;
@@ -60,25 +64,34 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
       message.error(`余量不足（剩余 ${product.remaining}，已约 ${oldQty}）`);
       return;
     }
+    // Optimistic patches
+    const nextItems = (swap.items || []).filter(i => i.product_id !== productId);
+    if ((newQty || 0) > 0) nextItems.push({ swap_id: swap.id, product_id: productId, quantity: newQty, product_name: product?.name });
+    onPatchSwap({ id: swap.id, items: nextItems });
+    if (product) onPatchProduct({ id: productId, remaining: product.remaining - delta, exchanged: (product.exchanged || 0) + delta });
     const items = products.map(p => {
-      const ex = swap.items?.find(i => i.product_id === p.id);
-      return {
-        product_id: p.id,
-        quantity: p.id === productId ? (newQty || 0) : (ex?.quantity || 0),
-      };
+      const ex = nextItems.find(i => i.product_id === p.id);
+      return { product_id: p.id, quantity: ex?.quantity || 0 };
     });
-    await api.updateSwapItems(swap.id, items);
-    onReloadSwap(swap.id);
-    onReloadProduct(productId);
+    api.updateSwapItems(swap.id, items).catch(() => {
+      message.error('保存失败');
+      onReloadSwap(swap.id);
+      onReloadProduct(productId);
+    });
   };
 
   const handleDelete = async (id) => {
     const swap = swaps.find(s => s.id === id);
     const affectedProductIds = (swap?.items || []).map(it => it.product_id);
-    await api.deleteSwap(id);
-    message.success('已删除');
     onRemoveSwap(id);
-    affectedProductIds.forEach(pid => onReloadProduct(pid));
+    try {
+      await api.deleteSwap(id);
+      message.success('已删除');
+      affectedProductIds.forEach(pid => onReloadProduct(pid));
+    } catch {
+      message.error('删除失败');
+      onUpdate();
+    }
   };
 
   const handleAddRow = (defaults = {}) => {
