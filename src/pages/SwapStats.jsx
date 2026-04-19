@@ -71,10 +71,11 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     );
   };
 
-  const openSwapImages = (swap) => {
+  const openSwapImages = async (swap) => {
+    const images = await api.getSwapImages(swap.id);
     onImageModal({
       type: 'swap', targetId: swap.id, targetName: swap.nickname,
-      images: swap.images || [], currentIndex: 0,
+      images, currentIndex: 0,
     });
   };
 
@@ -166,10 +167,10 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       ),
     },
     {
-      title: '对方制品图', dataIndex: 'images', width: 80, align: 'center',
-      render: (imgs, r) => (
+      title: '对方制品图', dataIndex: 'cover_image', width: 80, align: 'center',
+      render: (cover, r) => (
         <div className="preview-thumb" onClick={() => openSwapImages(r)}>
-          {imgs?.length > 0 ? <img src={imgs[0].data} alt="" /> : <PictureOutlined style={{ fontSize: 22, color: '#bbb' }} />}
+          {cover ? <img src={cover.data} alt="" /> : <PictureOutlined style={{ fontSize: 22, color: '#bbb' }} />}
         </div>
       ),
     },

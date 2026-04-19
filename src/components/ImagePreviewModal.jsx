@@ -25,9 +25,7 @@ export default function ImagePreviewModal({ type, targetId, targetName, images: 
     if (isProduct) {
       updated = await api.getProductImages(targetId);
     } else {
-      const swaps = await api.getSwaps();
-      const swap = swaps.find(s => s.id === targetId);
-      updated = swap?.images || [];
+      updated = await api.getSwapImages(targetId);
     }
     setImages(updated);
     onUpdate();

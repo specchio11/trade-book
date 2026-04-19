@@ -3,7 +3,7 @@ import pool from '../db.js';
 
 const router = Router();
 
-// Get all swaps with items
+// Get all swaps with items (batched, no full image data)
 router.get('/', async (req, res) => {
   const { rows: swaps } = await pool.query(`
     SELECT s.*, sm.name AS method_name, sm.sort_order AS method_sort
@@ -12,19 +12,49 @@ router.get('/', async (req, res) => {
     WHERE s.user_id = $1
     ORDER BY s.sort_order, s.id
   `, [req.userId]);
+  if (swaps.length === 0) return res.json(swaps);
+  const ids = swaps.map(s => s.id);
+  // All items in one query
+  const { rows: items } = await pool.query(
+    `SELECT si.*, p.name AS product_name
+     FROM swap_items si JOIN products p ON p.id = si.product_id
+     WHERE si.swap_id = ANY($1::int[])`,
+    [ids]
+  );
+  // Cover image (first by sort_order) + count per swap, in one query each
+  const { rows: covers } = await pool.query(
+    `SELECT DISTINCT ON (swap_id) swap_id, id, data
+     FROM swap_images WHERE swap_id = ANY($1::int[])
+     ORDER BY swap_id, sort_order, id`,
+    [ids]
+  );
+  const { rows: counts } = await pool.query(
+    `SELECT swap_id, COUNT(*)::int AS n FROM swap_images
+     WHERE swap_id = ANY($1::int[]) GROUP BY swap_id`,
+    [ids]
+  );
+  const itemMap = new Map(ids.map(id => [id, []]));
+  for (const it of items) itemMap.get(it.swap_id)?.push(it);
+  const coverMap = new Map(covers.map(c => [c.swap_id, { id: c.id, data: c.data }]));
+  const countMap = new Map(counts.map(c => [c.swap_id, c.n]));
   for (const swap of swaps) {
-    const { rows: items } = await pool.query(
-      'SELECT si.*, p.name AS product_name FROM swap_items si JOIN products p ON p.id = si.product_id WHERE si.swap_id = $1',
-      [swap.id]
-    );
-    swap.items = items;
-    const { rows: images } = await pool.query(
-      'SELECT id, data FROM swap_images WHERE swap_id = $1 ORDER BY sort_order',
-      [swap.id]
-    );
-    swap.images = images;
+    swap.items = itemMap.get(swap.id) || [];
+    swap.cover_image = coverMap.get(swap.id) || null;
+    swap.image_count = countMap.get(swap.id) || 0;
   }
   res.json(swaps);
+});
+
+// Get all images for a single swap (lazy-loaded on modal open)
+router.get('/:id/images', async (req, res) => {
+  const swapId = parseInt(req.params.id);
+  const { rows: own } = await pool.query('SELECT id FROM swaps WHERE id = $1 AND user_id = $2', [swapId, req.userId]);
+  if (own.length === 0) return res.status(404).json({ error: 'Not found' });
+  const { rows } = await pool.query(
+    'SELECT id, data FROM swap_images WHERE swap_id = $1 ORDER BY sort_order, id',
+    [swapId]
+  );
+  res.json(rows);
 });
 
 // Create swap
@@ -130,23 +160,16 @@ router.delete('/:id', async (req, res) => {
 // Reorder swaps
 router.put('/reorder', async (req, res) => {
   const { order } = req.body;
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    for (const item of order) {
-      await client.query(
-        'UPDATE swaps SET sort_order = $1 WHERE id = $2 AND user_id = $3',
-        [parseInt(item.sort_order), parseInt(item.id), req.userId]
-      );
-    }
-    await client.query('COMMIT');
-    res.json({ ok: true });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
-  }
+  if (!Array.isArray(order) || order.length === 0) return res.json({ ok: true });
+  const ids = order.map(o => parseInt(o.id));
+  const sorts = order.map(o => parseInt(o.sort_order));
+  await pool.query(
+    `UPDATE swaps SET sort_order = u.sort_order::int
+     FROM (SELECT UNNEST($1::int[]) AS id, UNNEST($2::int[]) AS sort_order) u
+     WHERE swaps.id = u.id AND swaps.user_id = $3`,
+    [ids, sorts, req.userId]
+  );
+  res.json({ ok: true });
 });
 
 // Swap images

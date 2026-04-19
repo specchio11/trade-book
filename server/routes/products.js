@@ -19,14 +19,18 @@ router.get('/', async (req, res) => {
     GROUP BY p.id, pt.name, c.name
     ORDER BY p.sort_order, p.id
   `, [req.userId]);
-  // Attach cover image
-  for (const row of rows) {
-    const img = await pool.query(
-      `SELECT id, data, is_cover FROM product_images WHERE product_id = $1 ORDER BY is_cover DESC, sort_order LIMIT 1`,
-      [row.id]
-    );
-    row.cover_image = img.rows[0] || null;
-  }
+  if (rows.length === 0) return res.json(rows);
+  // Batch-load cover image (one query, DISTINCT ON per product_id)
+  const ids = rows.map(r => r.id);
+  const { rows: covers } = await pool.query(
+    `SELECT DISTINCT ON (product_id) product_id, id, data, is_cover
+     FROM product_images
+     WHERE product_id = ANY($1::int[])
+     ORDER BY product_id, is_cover DESC, sort_order`,
+    [ids]
+  );
+  const coverMap = new Map(covers.map(c => [c.product_id, { id: c.id, data: c.data, is_cover: c.is_cover }]));
+  for (const row of rows) row.cover_image = coverMap.get(row.id) || null;
   res.json(rows);
 });
 
@@ -74,24 +78,17 @@ router.delete('/:id', async (req, res) => {
 
 // Reorder products
 router.put('/reorder', async (req, res) => {
-  const { order } = req.body; // [{id, sort_order}, ...]
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    for (const item of order) {
-      await client.query(
-        'UPDATE products SET sort_order = $1 WHERE id = $2 AND user_id = $3',
-        [parseInt(item.sort_order), parseInt(item.id), req.userId]
-      );
-    }
-    await client.query('COMMIT');
-    res.json({ ok: true });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    throw e;
-  } finally {
-    client.release();
-  }
+  const { order } = req.body;
+  if (!Array.isArray(order) || order.length === 0) return res.json({ ok: true });
+  const ids = order.map(o => parseInt(o.id));
+  const sorts = order.map(o => parseInt(o.sort_order));
+  await pool.query(
+    `UPDATE products SET sort_order = u.sort_order::int
+     FROM (SELECT UNNEST($1::int[]) AS id, UNNEST($2::int[]) AS sort_order) u
+     WHERE products.id = u.id AND products.user_id = $3`,
+    [ids, sorts, req.userId]
+  );
+  res.json({ ok: true });
 });
 
 // Get product images

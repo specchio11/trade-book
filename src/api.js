@@ -50,6 +50,7 @@ export const api = {
   reorderSwaps: (order) => request('/swaps/reorder', { method: 'PUT', body: JSON.stringify({ order }) }),
   uploadSwapImage: (id, data) => request(`/swaps/${id}/images`, { method: 'POST', body: JSON.stringify({ data }) }),
   deleteSwapImage: (swapId, imageId) => request(`/swaps/${swapId}/images/${imageId}`, { method: 'DELETE' }),
+  getSwapImages: (id) => request(`/swaps/${id}/images`),
 
   // Methods
   getMethods: () => request('/methods'),

@@ -47,23 +47,16 @@ export function createOptionsRouter(tableName) {
 
   router.put('/reorder', async (req, res) => {
     const { order } = req.body;
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      for (const item of order) {
-        await client.query(
-          `UPDATE ${tableName} SET sort_order = $1 WHERE id = $2 AND user_id = $3`,
-          [parseInt(item.sort_order), parseInt(item.id), req.userId]
-        );
-      }
-      await client.query('COMMIT');
-      res.json({ ok: true });
-    } catch (e) {
-      await client.query('ROLLBACK');
-      throw e;
-    } finally {
-      client.release();
-    }
+    if (!Array.isArray(order) || order.length === 0) return res.json({ ok: true });
+    const ids = order.map(o => parseInt(o.id));
+    const sorts = order.map(o => parseInt(o.sort_order));
+    await pool.query(
+      `UPDATE ${tableName} SET sort_order = u.sort_order::int
+       FROM (SELECT UNNEST($1::int[]) AS id, UNNEST($2::int[]) AS sort_order) u
+       WHERE ${tableName}.id = u.id AND ${tableName}.user_id = $3`,
+      [ids, sorts, req.userId]
+    );
+    res.json({ ok: true });
   });
 
   return router;

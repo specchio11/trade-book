@@ -88,6 +88,17 @@ export async function initDB() {
 
     ALTER TABLE products ADD COLUMN IF NOT EXISTS type_id INTEGER REFERENCES product_types(id) ON DELETE SET NULL;
     ALTER TABLE products ADD COLUMN IF NOT EXISTS character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL;
+
+    -- Performance indexes
+    CREATE INDEX IF NOT EXISTS idx_products_user ON products(user_id);
+    CREATE INDEX IF NOT EXISTS idx_swaps_user ON swaps(user_id);
+    CREATE INDEX IF NOT EXISTS idx_swap_items_swap ON swap_items(swap_id);
+    CREATE INDEX IF NOT EXISTS idx_swap_items_product ON swap_items(product_id);
+    CREATE INDEX IF NOT EXISTS idx_swap_images_swap ON swap_images(swap_id);
+    CREATE INDEX IF NOT EXISTS idx_product_images_product ON product_images(product_id);
+    CREATE INDEX IF NOT EXISTS idx_swap_methods_user ON swap_methods(user_id);
+    CREATE INDEX IF NOT EXISTS idx_product_types_user ON product_types(user_id);
+    CREATE INDEX IF NOT EXISTS idx_characters_user ON characters(user_id);
   `);
 
   // Seed default admin user if empty
