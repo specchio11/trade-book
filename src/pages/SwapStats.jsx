@@ -77,15 +77,17 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     onUpdate();
   };
 
-  const handleAddRow = async (defaults = {}) => {
-    const created = await api.createSwap({
-      nickname: '', qq: '',
+  const handleAddRow = (defaults = {}) => {
+    setRegisterSwap({
+      nickname: '',
+      qq: '',
       swap_method_id: null,
-      received_product: '', notes: '', items: [], images: [],
+      received_product: '',
+      notes: '',
+      address: '',
+      items: [],
       ...defaults,
     });
-    onUpdate();
-    setRegisterSwap({ ...created, items: [] });
   };
 
   const renderGroupFooter = (gb, key) => {

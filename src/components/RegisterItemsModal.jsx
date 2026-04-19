@@ -51,6 +51,7 @@ function SortableThumb({ img, onDelete }) {
 
 export default function RegisterItemsModal({ swap, products, methods = [], onClose, onSaved }) {
   const [form] = Form.useForm();
+  const isNew = !swap.id;
   const [selectedMethodId, setSelectedMethodId] = useState(swap.swap_method_id || methods[0]?.id || null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -61,17 +62,22 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   }, [swap]);
   const [quantities, setQuantities] = useState(initial);
 
+  // For existing swaps: images are persisted server-side (each entry has numeric id + data).
+  // For new swaps: images are staged locally as { id: 'tmp-N', data: dataUrl }.
   const [images, setImages] = useState([]);
-  const [loadingImages, setLoadingImages] = useState(true);
+  const [loadingImages, setLoadingImages] = useState(!isNew);
   const imagesDirtyRef = useRef(false);
+  const tmpIdRef = useRef(0);
 
   const reloadImages = useCallback(async () => {
+    if (isNew) return images;
     const imgs = await api.getSwapImages(swap.id);
     setImages(imgs);
     return imgs;
-  }, [swap.id]);
+  }, [swap.id, isNew, images]);
 
   useEffect(() => {
+    if (isNew) return;
     let alive = true;
     api.getSwapImages(swap.id).then(imgs => {
       if (alive) {
@@ -80,7 +86,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
       }
     });
     return () => { alive = false; };
-  }, [swap.id]);
+  }, [swap.id, isNew]);
 
   const sorted = useMemo(() => {
     return [...products].sort((a, b) => {
@@ -114,13 +120,21 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   const processFiles = useCallback(async (files) => {
     const list = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (list.length === 0) return;
+    if (isNew) {
+      const dataUrls = await Promise.all(list.map(f => readFileAsDataURL(f)));
+      setImages(prev => [
+        ...prev,
+        ...dataUrls.map(d => ({ id: `tmp-${++tmpIdRef.current}`, data: d })),
+      ]);
+      return;
+    }
     for (const file of list) {
       const data = await readFileAsDataURL(file);
       await api.uploadSwapImage(swap.id, data);
     }
     imagesDirtyRef.current = true;
     await reloadImages();
-  }, [swap.id, reloadImages]);
+  }, [swap.id, isNew, reloadImages]);
 
   useEffect(() => {
     const handlePaste = (e) => {
@@ -138,6 +152,10 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   }, [processFiles]);
 
   const handleDeleteImage = async (id) => {
+    if (isNew) {
+      setImages(prev => prev.filter(i => i.id !== id));
+      return;
+    }
     await api.deleteSwapImage(swap.id, id);
     imagesDirtyRef.current = true;
     await reloadImages();
@@ -152,6 +170,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
     if (oldI < 0 || newI < 0) return;
     const next = arrayMove(images, oldI, newI);
     setImages(next);
+    if (isNew) return;
     imagesDirtyRef.current = true;
     await api.reorderSwapImages(swap.id, next.map(i => i.id));
   };
@@ -166,19 +185,32 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
     try { values = await form.validateFields(); } catch { return; }
     setSubmitting(true);
     try {
-      await api.updateSwap(swap.id, {
-        nickname: values.nickname || '',
-        qq: values.qq || '',
-        swap_method_id: values.method || null,
-        received_product: values.received_product || '',
-        address: isMail ? (values.address || '') : '',
-        notes: values.notes || '',
-      });
       const items = sorted.map(p => ({
         product_id: p.id,
         quantity: parseInt(quantities[p.id]) || 0,
       })).filter(it => it.quantity > 0);
-      await api.updateSwapItems(swap.id, items);
+      if (isNew) {
+        await api.createSwap({
+          nickname: values.nickname || '',
+          qq: values.qq || '',
+          swap_method_id: values.method || null,
+          received_product: values.received_product || '',
+          address: isMail ? (values.address || '') : '',
+          notes: values.notes || '',
+          items,
+          images: images.map(i => i.data),
+        });
+      } else {
+        await api.updateSwap(swap.id, {
+          nickname: values.nickname || '',
+          qq: values.qq || '',
+          swap_method_id: values.method || null,
+          received_product: values.received_product || '',
+          address: isMail ? (values.address || '') : '',
+          notes: values.notes || '',
+        });
+        await api.updateSwapItems(swap.id, items);
+      }
       onSaved();
       onClose();
     } finally {
