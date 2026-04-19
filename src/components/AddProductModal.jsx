@@ -1,0 +1,59 @@
+import { useState } from 'react';
+import { Modal, Form, Input, InputNumber } from 'antd';
+import { api } from '../api';
+import ImageUploadZone from './ImageUploadZone';
+
+export default function AddProductModal({ onClose, onCreated }) {
+  const [form] = Form.useForm();
+  const [images, setImages] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    let values;
+    try { values = await form.validateFields(); } catch { return; }
+    setSubmitting(true);
+    try {
+      const product = await api.createProduct({
+        name: values.name.trim(),
+        total: values.total,
+        notes: values.notes || '',
+      });
+      for (const img of images) {
+        await api.uploadProductImage(product.id, img);
+      }
+      onCreated();
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      title="添加制品"
+      onCancel={onClose}
+      onOk={handleSubmit}
+      okText="确认添加"
+      cancelText="取消"
+      confirmLoading={submitting}
+      maskClosable={false}
+      width={560}
+    >
+      <Form form={form} layout="vertical" requiredMark>
+        <Form.Item label="制品名称" name="name" rules={[{ required: true, message: '请输入名称' }]}>
+          <Input placeholder="输入制品名称" />
+        </Form.Item>
+        <Form.Item label="总数" name="total" rules={[{ required: true, message: '请输入总数' }]}>
+          <InputNumber min={0} style={{ width: 200 }} placeholder="输入数量" />
+        </Form.Item>
+        <Form.Item label="制品图片">
+          <ImageUploadZone images={images} onChange={setImages} />
+        </Form.Item>
+        <Form.Item label="备注" name="notes">
+          <Input placeholder="选填" />
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+}
