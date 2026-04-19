@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Button, Input, InputNumber, Select, Checkbox, Tag, Popconfirm, App, Tooltip, Space } from 'antd';
-import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined, AppstoreAddOutlined } from '@ant-design/icons';
 import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
+import RegisterItemsModal from '../components/RegisterItemsModal';
 
 const methodColor = (name) => {
   if (!name) return 'default';
@@ -15,6 +16,7 @@ const methodColor = (name) => {
 export default function SwapStats({ swaps, products, methods, onUpdate, onEditMethods, onImageModal }) {
   const { message } = App.useApp();
   const [groupBy, setGroupBy] = useState(null);
+  const [registerSwap, setRegisterSwap] = useState(null);
 
   const handleUpdate = async (id, field, value) => {
     await api.updateSwap(id, { [field]: value });
@@ -198,11 +200,16 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       ),
     },
     {
-      title: '操作', key: 'action', width: 80, align: 'center', fixed: 'right',
+      title: '操作', key: 'action', width: 110, align: 'center', fixed: 'right',
       render: (_, r) => (
-        <Popconfirm title="确定删除？" onConfirm={() => handleDelete(r.id)} okText="删除" cancelText="取消">
-          <Button type="text" danger icon={<DeleteOutlined />} />
-        </Popconfirm>
+        <Space size={0}>
+          <Tooltip title="只登记互换制品信息">
+            <Button type="text" icon={<AppstoreAddOutlined />} onClick={() => setRegisterSwap(r)} />
+          </Tooltip>
+          <Popconfirm title="确定删除？" onConfirm={() => handleDelete(r.id)} okText="删除" cancelText="取消">
+            <Button type="text" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -263,6 +270,15 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
           <Button type="dashed" block icon={<PlusOutlined />} onClick={() => handleAddRow()}>添加一行</Button>
         )}
       />
+
+      {registerSwap && (
+        <RegisterItemsModal
+          swap={registerSwap}
+          products={products}
+          onClose={() => setRegisterSwap(null)}
+          onSaved={onUpdate}
+        />
+      )}
     </>
   );
 }
