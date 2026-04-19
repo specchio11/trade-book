@@ -281,35 +281,38 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
 
   return (
     <>
-      <Space wrap style={{ marginBottom: 12 }}>
-        <span>分组：</span>
-        <Select value={groupBy} options={groupOptions} onChange={setGroupBy} style={{ width: 180 }} />
-        {products.length > 0 && (
-          <Button
-            icon={itemsCollapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
-            onClick={toggleCollapsed}
-          >
-            {itemsCollapsed ? '展开互换制品列' : '折叠互换制品列'}
-          </Button>
-        )}
-        <span style={{ color: '#999', margin: '0 4px' }}>|</span>
-        <Tag color="blue" style={{ fontSize: 13, padding: '2px 8px' }}>共 {swaps.length} 人</Tag>
-        {methods.map(m => {
-          const count = swaps.filter(s => s.swap_method_id === m.id).length;
-          if (count === 0) return null;
-          return (
-            <Tag key={m.id} color={methodColor(m.name)} style={{ fontSize: 13, padding: '2px 8px' }}>
-              {m.name} {count}
-            </Tag>
-          );
-        })}
-        {(() => {
-          const noneCount = swaps.filter(s => !s.swap_method_id).length;
-          return noneCount > 0
-            ? <Tag style={{ fontSize: 13, padding: '2px 8px' }}>未选择 {noneCount}</Tag>
-            : null;
-        })()}
-      </Space>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+        <Space wrap>
+          <span>分组：</span>
+          <Select value={groupBy} options={groupOptions} onChange={setGroupBy} style={{ width: 180 }} />
+          {products.length > 0 && (
+            <Button
+              icon={itemsCollapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
+              onClick={toggleCollapsed}
+            >
+              {itemsCollapsed ? '展开互换制品列' : '折叠互换制品列'}
+            </Button>
+          )}
+        </Space>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Tag color="blue" style={{ fontSize: 13, padding: '2px 8px', margin: 0 }}>共 {swaps.length} 人</Tag>
+          {methods.map(m => {
+            const count = swaps.filter(s => s.swap_method_id === m.id).length;
+            if (count === 0) return null;
+            return (
+              <Tag key={m.id} color={methodColor(m.name)} style={{ fontSize: 13, padding: '2px 8px', margin: 0 }}>
+                {m.name} {count}
+              </Tag>
+            );
+          })}
+          {(() => {
+            const noneCount = swaps.filter(s => !s.swap_method_id).length;
+            return noneCount > 0
+              ? <Tag style={{ fontSize: 13, padding: '2px 8px', margin: 0 }}>未选择 {noneCount}</Tag>
+              : null;
+          })()}
+        </div>
+      </div>
 
       <SortableTable
         columns={columns}
