@@ -98,9 +98,9 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       ),
       dataIndex: 'swap_method_id', width: 160,
       sorter: (a, b) => {
-        const an = methods.find(m => m.id === a.swap_method_id)?.name || '';
-        const bn = methods.find(m => m.id === b.swap_method_id)?.name || '';
-        return an.localeCompare(bn);
+        const ai = methods.findIndex(m => m.id === a.swap_method_id);
+        const bi = methods.findIndex(m => m.id === b.swap_method_id);
+        return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
       },
       render: (v, r) => (
         <Select variant="borderless" value={v || undefined} placeholder="选择" style={{ width: '100%' }}

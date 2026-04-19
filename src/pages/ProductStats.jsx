@@ -98,14 +98,22 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
       title: headerWithSetting('制品类型', 'type'),
       dataIndex: 'type_id',
       width: 140,
-      sorter: (a, b) => (a.type_name || '').localeCompare(b.type_name || ''),
+      sorter: (a, b) => {
+        const ai = types.findIndex(t => t.id === a.type_id);
+        const bi = types.findIndex(t => t.id === b.type_id);
+        return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
+      },
       render: (v, r) => optionSelect(types, v, (val) => handleUpdate(r.id, 'type_id', val ?? null)),
     },
     {
       title: headerWithSetting('角色', 'character'),
       dataIndex: 'character_id',
       width: 140,
-      sorter: (a, b) => (a.character_name || '').localeCompare(b.character_name || ''),
+      sorter: (a, b) => {
+        const ai = characters.findIndex(c => c.id === a.character_id);
+        const bi = characters.findIndex(c => c.id === b.character_id);
+        return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
+      },
       render: (v, r) => optionSelect(characters, v, (val) => handleUpdate(r.id, 'character_id', val ?? null)),
     },
     {
