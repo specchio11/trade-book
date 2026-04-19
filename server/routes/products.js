@@ -32,10 +32,10 @@ router.get('/', async (req, res) => {
 
 // Create product
 router.post('/', async (req, res) => {
-  const { name, total, notes } = req.body;
+  const { name, total, notes, type_id, character_id } = req.body;
   const { rows } = await pool.query(
-    'INSERT INTO products (user_id, name, total, notes) VALUES ($1, $2, $3, $4) RETURNING *',
-    [req.userId, name, parseInt(total) || 0, notes || '']
+    'INSERT INTO products (user_id, name, total, notes, type_id, character_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+    [req.userId, name, parseInt(total) || 0, notes || '', type_id ? parseInt(type_id) : null, character_id ? parseInt(character_id) : null]
   );
   res.json(rows[0]);
 });

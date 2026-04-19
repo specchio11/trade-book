@@ -39,9 +39,17 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
     });
   };
 
-  const handleAddRow = async () => {
-    await api.createProduct({ name: '新制品', total: 0, notes: '' });
+  const handleAddRow = async (defaults = {}) => {
+    await api.createProduct({ name: '新制品', total: 0, notes: '', ...defaults });
     onUpdate();
+  };
+
+  const renderGroupFooter = (groupBy, key) => {
+    const parsed = key === '__none__' ? null : parseInt(key);
+    const defaults = key === '__none__' ? { [groupBy]: null } : { [groupBy]: isNaN(parsed) ? key : parsed };
+    return (
+      <Button type="dashed" block icon={<PlusOutlined />} onClick={() => handleAddRow(defaults)}>添加一行</Button>
+    );
   };
 
   const handleReorder = async (next) => {
@@ -211,13 +219,14 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
         onReorder={handleReorder}
         groupBy={groupBy}
         getGroupLabel={getGroupLabel}
+        groupFooter={renderGroupFooter}
         storageKey="products"
         pagination={false}
         bordered
         size="middle"
         scroll={{ x: 'max-content' }}
         footer={() => (
-          <Button type="dashed" block icon={<PlusOutlined />} onClick={handleAddRow}>添加一行</Button>
+          <Button type="dashed" block icon={<PlusOutlined />} onClick={() => handleAddRow()}>添加一行</Button>
         )}
       />
 

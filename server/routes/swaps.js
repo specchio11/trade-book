@@ -29,14 +29,14 @@ router.get('/', async (req, res) => {
 
 // Create swap
 router.post('/', async (req, res) => {
-  const { nickname, qq, swap_method_id, received_product, notes, items, images } = req.body;
+  const { nickname, qq, swap_method_id, received_product, notes, items, images, address, is_packed, is_swapped } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
-      `INSERT INTO swaps (user_id, nickname, qq, swap_method_id, received_product, notes)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [req.userId, nickname, qq, swap_method_id ? parseInt(swap_method_id) : null, received_product || '', notes || '']
+      `INSERT INTO swaps (user_id, nickname, qq, swap_method_id, received_product, notes, address, is_packed, is_swapped)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [req.userId, nickname, qq, swap_method_id ? parseInt(swap_method_id) : null, received_product || '', notes || '', address || '', !!is_packed, !!is_swapped]
     );
     const swap = rows[0];
     if (items && items.length > 0) {

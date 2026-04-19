@@ -47,13 +47,28 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     onUpdate();
   };
 
-  const handleAddRow = async () => {
+  const handleAddRow = async (defaults = {}) => {
     await api.createSwap({
       nickname: '新互换', qq: '',
       swap_method_id: methods[0]?.id || null,
       received_product: '', notes: '', items: [], images: [],
+      ...defaults,
     });
     onUpdate();
+  };
+
+  const renderGroupFooter = (gb, key) => {
+    let defaults = {};
+    if (gb === 'is_packed' || gb === 'is_swapped') {
+      defaults[gb] = key === 'true';
+    } else if (gb === 'swap_method_id') {
+      defaults.swap_method_id = key === '__none__' ? null : parseInt(key);
+    } else {
+      defaults[gb] = key === '__none__' ? null : key;
+    }
+    return (
+      <Button type="dashed" block icon={<PlusOutlined />} onClick={() => handleAddRow(defaults)}>添加一行</Button>
+    );
   };
 
   const openSwapImages = (swap) => {
@@ -213,13 +228,14 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
         onReorder={handleReorder}
         groupBy={groupBy}
         getGroupLabel={getGroupLabel}
+        groupFooter={renderGroupFooter}
         storageKey="swaps"
         pagination={false}
         bordered
         size="middle"
         scroll={{ x: 'max-content' }}
         footer={() => (
-          <Button type="dashed" block icon={<PlusOutlined />} onClick={handleAddRow}>添加一行</Button>
+          <Button type="dashed" block icon={<PlusOutlined />} onClick={() => handleAddRow()}>添加一行</Button>
         )}
       />
     </>

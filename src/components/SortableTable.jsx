@@ -126,7 +126,7 @@ function InnerTable({ dataSource, columns: rawColumns, onReorder, storageKey, ..
   );
 }
 
-export default function SortableTable({ dataSource, groupBy, getGroupValue, getGroupLabel, ...rest }) {
+export default function SortableTable({ dataSource, groupBy, getGroupValue, getGroupLabel, groupFooter, ...rest }) {
   if (!groupBy) {
     return <InnerTable dataSource={dataSource} {...rest} />;
   }
@@ -142,10 +142,13 @@ export default function SortableTable({ dataSource, groupBy, getGroupValue, getG
 
   const items = Array.from(groups.entries()).map(([key, rows]) => {
     const label = key === '__none__' ? '（未分类）' : (getGroupLabel ? getGroupLabel(key, groupBy, rows) : key);
+    const innerRest = groupFooter
+      ? { ...rest, footer: () => groupFooter(groupBy, key, rows) }
+      : rest;
     return {
       key,
       label: <Typography.Text strong>{label} <Typography.Text type="secondary">（{rows.length}）</Typography.Text></Typography.Text>,
-      children: <InnerTable dataSource={rows} {...rest} />,
+      children: <InnerTable dataSource={rows} {...innerRest} />,
     };
   });
 
