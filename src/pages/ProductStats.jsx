@@ -80,12 +80,13 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
   );
 
   const columns = [
-    { key: 'sort', width: 40, align: 'center', render: () => <DragHandle /> },
+    { key: 'sort', width: 40, align: 'center', fixed: 'left', render: () => <DragHandle /> },
     {
       title: '预览图',
       dataIndex: 'cover_image',
       key: 'cover_image',
       width: 90,
+      fixed: 'left',
       render: (cover, record) => (
         <div className="preview-thumb" onClick={() => handleImageClick(record)}>
           {cover ? <img src={cover.data} alt="" /> : <PictureOutlined style={{ fontSize: 22, color: '#bbb' }} />}
@@ -96,6 +97,7 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
       title: '名称',
       dataIndex: 'name',
       width: 180,
+      fixed: 'left',
       render: (v, r) => (
         <Input variant="borderless" defaultValue={v}
           onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'name', e.target.value); }}
@@ -182,6 +184,7 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
       key: 'action',
       width: 80,
       align: 'center',
+      fixed: 'right',
       render: (_, r) => (
         <Popconfirm title="确定删除？" onConfirm={() => handleDelete(r.id)} okText="删除" cancelText="取消">
           <Button type="text" danger icon={<DeleteOutlined />} />

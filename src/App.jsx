@@ -20,11 +20,21 @@ export default function App() {
   const [showEditMethods, setShowEditMethods] = useState(false);
   const [imageModal, setImageModal] = useState(null);
 
+  const loadProducts = useCallback(async () => { setProducts(await api.getProducts()); }, []);
+  const loadSwaps = useCallback(async () => { setSwaps(await api.getSwaps()); }, []);
+  const loadMethods = useCallback(async () => { setMethods(await api.getMethods()); }, []);
   const loadData = useCallback(async () => {
     const [p, s, m] = await Promise.all([api.getProducts(), api.getSwaps(), api.getMethods()]);
     setProducts(p);
     setSwaps(s);
     setMethods(m);
+  }, []);
+
+  // After a swap mutation, products' remaining/exchanged also change → refresh both
+  const reloadAfterSwapChange = useCallback(async () => {
+    const [s, p] = await Promise.all([api.getSwaps(), api.getProducts()]);
+    setSwaps(s);
+    setProducts(p);
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -53,23 +63,23 @@ export default function App() {
 
       <div style={{ padding: '0 24px 24px' }}>
         {tab === 'products' ? (
-          <ProductStats products={products} onUpdate={loadData} onImageModal={setImageModal} />
+          <ProductStats products={products} onUpdate={loadProducts} onImageModal={setImageModal} />
         ) : (
-          <SwapStats swaps={swaps} products={products} methods={methods} onUpdate={loadData} onEditMethods={() => setShowEditMethods(true)} onImageModal={setImageModal} />
+          <SwapStats swaps={swaps} products={products} methods={methods} onUpdate={reloadAfterSwapChange} onEditMethods={() => setShowEditMethods(true)} onImageModal={setImageModal} />
         )}
       </div>
 
       {showAddProduct && (
-        <AddProductModal onClose={() => setShowAddProduct(false)} onCreated={loadData} />
+        <AddProductModal onClose={() => setShowAddProduct(false)} onCreated={loadProducts} />
       )}
       {showAddSwap && (
-        <AddSwapModal products={products} methods={methods} onClose={() => setShowAddSwap(false)} onCreated={loadData} />
+        <AddSwapModal products={products} methods={methods} onClose={() => setShowAddSwap(false)} onCreated={reloadAfterSwapChange} />
       )}
       {showEditMethods && (
-        <EditMethodsModal methods={methods} onClose={() => setShowEditMethods(false)} onSaved={loadData} />
+        <EditMethodsModal methods={methods} onClose={() => setShowEditMethods(false)} onSaved={loadMethods} />
       )}
       {imageModal && (
-        <ImagePreviewModal {...imageModal} onClose={() => setImageModal(null)} onUpdate={loadData} />
+        <ImagePreviewModal {...imageModal} onClose={() => setImageModal(null)} onUpdate={imageModal.type === 'product' ? loadProducts : reloadAfterSwapChange} />
       )}
     </div>
   );
