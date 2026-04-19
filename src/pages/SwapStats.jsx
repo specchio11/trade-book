@@ -136,7 +136,14 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     },
     ...(products.length > 0 ? [{
       title: '互换制品',
-      children: products.map(p => ({
+      children: [...products]
+        .sort((a, b) => {
+          const at = a.type_sort ?? Infinity;
+          const bt = b.type_sort ?? Infinity;
+          if (at !== bt) return at - bt;
+          return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+        })
+        .map(p => ({
         title: (
           <div style={{ textAlign: 'center' }}>
             <div>{p.name}</div>

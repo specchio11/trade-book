@@ -20,14 +20,39 @@ export default function App() {
   const [showEditMethods, setShowEditMethods] = useState(false);
   const [imageModal, setImageModal] = useState(null);
 
-  const loadProducts = useCallback(async () => { setProducts(await api.getProducts()); }, []);
-  const loadSwaps = useCallback(async () => { setSwaps(await api.getSwaps()); }, []);
+  const loadProducts = useCallback(async () => {
+    const list = await api.getProducts();
+    setProducts(list);
+    // Lazy-load thumbnails after the table renders
+    api.getProductCovers().then((covers) => {
+      const map = new Map(covers.map(c => [c.product_id, c.cover_image]));
+      setProducts(prev => prev.map(p => ({ ...p, cover_image: map.get(p.id) || null })));
+    }).catch(() => {});
+  }, []);
+  const loadSwaps = useCallback(async () => {
+    const list = await api.getSwaps();
+    setSwaps(list);
+    api.getSwapCovers().then((covers) => {
+      const map = new Map(covers.map(c => [c.swap_id, c.cover_image]));
+      setSwaps(prev => prev.map(s => ({ ...s, cover_image: map.get(s.id) || null })));
+    }).catch(() => {});
+  }, []);
   const loadMethods = useCallback(async () => { setMethods(await api.getMethods()); }, []);
   const loadData = useCallback(async () => {
+    // Render the page as soon as the lightweight data is in
     const [p, s, m] = await Promise.all([api.getProducts(), api.getSwaps(), api.getMethods()]);
     setProducts(p);
     setSwaps(s);
     setMethods(m);
+    // Lazy-load thumbnails in the background
+    api.getProductCovers().then((covers) => {
+      const map = new Map(covers.map(c => [c.product_id, c.cover_image]));
+      setProducts(prev => prev.map(x => ({ ...x, cover_image: map.get(x.id) || null })));
+    }).catch(() => {});
+    api.getSwapCovers().then((covers) => {
+      const map = new Map(covers.map(c => [c.swap_id, c.cover_image]));
+      setSwaps(prev => prev.map(x => ({ ...x, cover_image: map.get(x.id) || null })));
+    }).catch(() => {});
   }, []);
 
   // After a swap mutation, products' remaining/exchanged also change → refresh both
@@ -35,6 +60,14 @@ export default function App() {
     const [s, p] = await Promise.all([api.getSwaps(), api.getProducts()]);
     setSwaps(s);
     setProducts(p);
+    api.getProductCovers().then((covers) => {
+      const map = new Map(covers.map(c => [c.product_id, c.cover_image]));
+      setProducts(prev => prev.map(x => ({ ...x, cover_image: map.get(x.id) || null })));
+    }).catch(() => {});
+    api.getSwapCovers().then((covers) => {
+      const map = new Map(covers.map(c => [c.swap_id, c.cover_image]));
+      setSwaps(prev => prev.map(x => ({ ...x, cover_image: map.get(x.id) || null })));
+    }).catch(() => {});
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);

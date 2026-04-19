@@ -3,7 +3,7 @@ import pool from '../db.js';
 
 const router = Router();
 
-// Get all swaps with items (batched, no full image data)
+// Get all swaps with items (no image data; lazy-load covers via /covers)
 router.get('/', async (req, res) => {
   const { rows: swaps } = await pool.query(`
     SELECT s.*, sm.name AS method_name, sm.sort_order AS method_sort
@@ -14,18 +14,10 @@ router.get('/', async (req, res) => {
   `, [req.userId]);
   if (swaps.length === 0) return res.json(swaps);
   const ids = swaps.map(s => s.id);
-  // All items in one query
   const { rows: items } = await pool.query(
     `SELECT si.*, p.name AS product_name
      FROM swap_items si JOIN products p ON p.id = si.product_id
      WHERE si.swap_id = ANY($1::int[])`,
-    [ids]
-  );
-  // Cover image (first by sort_order) + count per swap, in one query each
-  const { rows: covers } = await pool.query(
-    `SELECT DISTINCT ON (swap_id) swap_id, id, data
-     FROM swap_images WHERE swap_id = ANY($1::int[])
-     ORDER BY swap_id, sort_order, id`,
     [ids]
   );
   const { rows: counts } = await pool.query(
@@ -35,14 +27,25 @@ router.get('/', async (req, res) => {
   );
   const itemMap = new Map(ids.map(id => [id, []]));
   for (const it of items) itemMap.get(it.swap_id)?.push(it);
-  const coverMap = new Map(covers.map(c => [c.swap_id, { id: c.id, data: c.data }]));
   const countMap = new Map(counts.map(c => [c.swap_id, c.n]));
   for (const swap of swaps) {
     swap.items = itemMap.get(swap.id) || [];
-    swap.cover_image = coverMap.get(swap.id) || null;
     swap.image_count = countMap.get(swap.id) || 0;
   }
   res.json(swaps);
+});
+
+// Batch cover thumbnails (lazy load)
+router.get('/covers', async (req, res) => {
+  const { rows: covers } = await pool.query(
+    `SELECT DISTINCT ON (si.swap_id) si.swap_id, si.id, si.data
+     FROM swap_images si
+     JOIN swaps s ON s.id = si.swap_id
+     WHERE s.user_id = $1
+     ORDER BY si.swap_id, si.sort_order, si.id`,
+    [req.userId]
+  );
+  res.json(covers.map(c => ({ swap_id: c.swap_id, cover_image: { id: c.id, data: c.data } })));
 });
 
 // Get all images for a single swap (lazy-loaded on modal open)

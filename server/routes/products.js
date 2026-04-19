@@ -3,12 +3,14 @@ import pool from '../db.js';
 
 const router = Router();
 
-// Get all products with exchanged counts
+// Get all products with exchanged counts (no images)
 router.get('/', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT p.*,
       pt.name AS type_name,
+      pt.sort_order AS type_sort,
       c.name AS character_name,
+      c.sort_order AS character_sort,
       COALESCE(SUM(si.quantity), 0)::int AS exchanged,
       (p.total - COALESCE(SUM(si.quantity), 0))::int AS remaining
     FROM products p
@@ -16,22 +18,23 @@ router.get('/', async (req, res) => {
     LEFT JOIN product_types pt ON pt.id = p.type_id
     LEFT JOIN characters c ON c.id = p.character_id
     WHERE p.user_id = $1
-    GROUP BY p.id, pt.name, c.name
+    GROUP BY p.id, pt.name, pt.sort_order, c.name, c.sort_order
     ORDER BY p.sort_order, p.id
   `, [req.userId]);
-  if (rows.length === 0) return res.json(rows);
-  // Batch-load cover image (one query, DISTINCT ON per product_id)
-  const ids = rows.map(r => r.id);
-  const { rows: covers } = await pool.query(
-    `SELECT DISTINCT ON (product_id) product_id, id, data, is_cover
-     FROM product_images
-     WHERE product_id = ANY($1::int[])
-     ORDER BY product_id, is_cover DESC, sort_order`,
-    [ids]
-  );
-  const coverMap = new Map(covers.map(c => [c.product_id, { id: c.id, data: c.data, is_cover: c.is_cover }]));
-  for (const row of rows) row.cover_image = coverMap.get(row.id) || null;
   res.json(rows);
+});
+
+// Batch cover thumbnails (separate endpoint for lazy load)
+router.get('/covers', async (req, res) => {
+  const { rows: covers } = await pool.query(
+    `SELECT DISTINCT ON (pi.product_id) pi.product_id, pi.id, pi.data, pi.is_cover
+     FROM product_images pi
+     JOIN products p ON p.id = pi.product_id
+     WHERE p.user_id = $1
+     ORDER BY pi.product_id, pi.is_cover DESC, pi.sort_order`,
+    [req.userId]
+  );
+  res.json(covers.map(c => ({ product_id: c.product_id, cover_image: { id: c.id, data: c.data, is_cover: c.is_cover } })));
 });
 
 // Create product
