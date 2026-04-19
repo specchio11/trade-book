@@ -215,6 +215,22 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     return key;
   };
 
+  const groupSorter = (a, b, field) => {
+    if (field === 'swap_method_id') {
+      if (a === '__none__') return 1;
+      if (b === '__none__') return -1;
+      const ai = methods.findIndex(m => String(m.id) === a);
+      const bi = methods.findIndex(m => String(m.id) === b);
+      return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
+    }
+    if (field === 'is_packed' || field === 'is_swapped') {
+      // 未完成 在前，已完成 在后
+      const order = (k) => k === 'false' ? 0 : (k === 'true' ? 1 : 2);
+      return order(a) - order(b);
+    }
+    return 0;
+  };
+
   return (
     <>
       <Space style={{ marginBottom: 12 }}>
@@ -228,6 +244,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
         onReorder={handleReorder}
         groupBy={groupBy}
         getGroupLabel={getGroupLabel}
+        groupSorter={groupSorter}
         groupFooter={renderGroupFooter}
         storageKey="swaps"
         pagination={false}

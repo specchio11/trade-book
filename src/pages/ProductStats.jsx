@@ -201,6 +201,15 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
     return list.find(o => String(o.id) === key)?.name || '（未分类）';
   };
 
+  const groupSorter = (a, b, field) => {
+    const list = field === 'type_id' ? types : characters;
+    if (a === '__none__') return 1;
+    if (b === '__none__') return -1;
+    const ai = list.findIndex(o => String(o.id) === a);
+    const bi = list.findIndex(o => String(o.id) === b);
+    return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
+  };
+
   return (
     <>
       <Space style={{ marginBottom: 12 }}>
@@ -219,6 +228,7 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
         onReorder={handleReorder}
         groupBy={groupBy}
         getGroupLabel={getGroupLabel}
+        groupSorter={groupSorter}
         groupFooter={renderGroupFooter}
         storageKey="products"
         pagination={false}
