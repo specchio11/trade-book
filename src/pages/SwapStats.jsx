@@ -184,7 +184,14 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     ...(products.length > 0 ? [
       itemsCollapsed
         ? {
-            title: '互换制品',
+            title: (
+              <Space size={4}>
+                <span>互换制品</span>
+                <Tooltip title="展开制品列">
+                  <Button size="small" type="text" icon={<DoubleRightOutlined />} onClick={(e) => { e.stopPropagation(); toggleCollapsed(); }} />
+                </Tooltip>
+              </Space>
+            ),
             key: 'items_collapsed',
             width: 140,
             align: 'center',
@@ -201,7 +208,14 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
             },
           }
         : {
-            title: '互换制品',
+            title: (
+              <Space size={4}>
+                <span>互换制品</span>
+                <Tooltip title="折叠制品列">
+                  <Button size="small" type="text" icon={<DoubleLeftOutlined />} onClick={(e) => { e.stopPropagation(); toggleCollapsed(); }} />
+                </Tooltip>
+              </Space>
+            ),
             children: [...products]
               .sort((a, b) => {
                 const at = a.type_sort ?? Infinity;
