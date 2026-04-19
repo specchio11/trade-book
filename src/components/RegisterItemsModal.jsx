@@ -167,6 +167,8 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
     setSubmitting(true);
     try {
       await api.updateSwap(swap.id, {
+        nickname: values.nickname || '',
+        qq: values.qq || '',
         swap_method_id: values.method || null,
         received_product: values.received_product || '',
         address: isMail ? (values.address || '') : '',
@@ -187,7 +189,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   return (
     <Modal
       open
-      title={`登记互换 — ${swap.nickname || ''}`}
+      title={swap.nickname ? `登记互换 — ${swap.nickname}` : '添加互换'}
       onCancel={handleClose}
       onOk={handleSubmit}
       okText="保存"
@@ -200,6 +202,8 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
         form={form}
         layout="vertical"
         initialValues={{
+          nickname: swap.nickname || '',
+          qq: swap.qq || '',
           method: swap.swap_method_id || methods[0]?.id,
           received_product: swap.received_product || '',
           address: swap.address || '',
@@ -208,6 +212,15 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
       >
         <Typography.Text strong style={{ fontSize: 15 }}>对方信息</Typography.Text>
         <Divider style={{ margin: '8px 0 12px' }} />
+
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Form.Item label="昵称" name="nickname" rules={[{ required: true, message: '请填写昵称' }]} style={{ flex: 1 }}>
+            <Input placeholder="对方昵称" />
+          </Form.Item>
+          <Form.Item label="QQ" name="qq" style={{ flex: 1 }}>
+            <Input placeholder="选填" />
+          </Form.Item>
+        </div>
 
         <Form.Item label="互换方式" name="method" rules={[{ required: true, message: '请选择互换方式' }]}>
           <Radio.Group onChange={(e) => setSelectedMethodId(e.target.value)}>
