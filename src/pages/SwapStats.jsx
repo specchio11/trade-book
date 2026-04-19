@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Input, InputNumber, Select, Checkbox, Tag, Popconfirm, App, Tooltip, Space } from 'antd';
 import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined, AppstoreAddOutlined, DoubleLeftOutlined, DoubleRightOutlined } from '@ant-design/icons';
 import { api } from '../api';
@@ -12,6 +12,22 @@ const methodColor = (name) => {
   if (name === '互寄') return 'green';
   return 'default';
 };
+
+// Inline editor that stays in sync with external value changes (e.g. modal saves)
+function InlineEdit({ value, onCommit, placeholder }) {
+  const [local, setLocal] = useState(value || '');
+  useEffect(() => { setLocal(value || ''); }, [value]);
+  return (
+    <Input
+      variant="borderless"
+      placeholder={placeholder}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={() => { if (local !== (value || '')) onCommit(local); }}
+      onPressEnter={(e) => e.target.blur()}
+    />
+  );
+}
 
 export default function SwapStats({ swaps, products, methods, onUpdate, onEditMethods, onImageModal }) {
   const { message } = App.useApp();
@@ -104,19 +120,11 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     { key: 'sort', width: 40, fixed: 'left', align: 'center', render: () => <DragHandle /> },
     {
       title: '昵称', dataIndex: 'nickname', width: 140, fixed: 'left',
-      render: (v, r) => (
-        <Input key={v} variant="borderless" defaultValue={v}
-          onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'nickname', e.target.value); }}
-          onPressEnter={(e) => e.target.blur()} />
-      ),
+      render: (v, r) => <InlineEdit value={v} onCommit={(val) => handleUpdate(r.id, 'nickname', val)} />,
     },
     {
       title: 'QQ', dataIndex: 'qq', width: 140, fixed: 'left',
-      render: (v, r) => (
-        <Input key={v} variant="borderless" defaultValue={v}
-          onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'qq', e.target.value); }}
-          onPressEnter={(e) => e.target.blur()} />
-      ),
+      render: (v, r) => <InlineEdit value={v} onCommit={(val) => handleUpdate(r.id, 'qq', val)} />,
     },
     {
       title: (
@@ -151,11 +159,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     },
     {
       title: '对方互换制品', dataIndex: 'received_product', width: 160,
-      render: (v, r) => (
-        <Input key={v} variant="borderless" placeholder="—" defaultValue={v || ''}
-          onBlur={(e) => { if (e.target.value !== (v || '')) handleUpdate(r.id, 'received_product', e.target.value); }}
-          onPressEnter={(e) => e.target.blur()} />
-      ),
+      render: (v, r) => <InlineEdit value={v} placeholder="—" onCommit={(val) => handleUpdate(r.id, 'received_product', val)} />,
     },
     {
       title: '对方制品图', dataIndex: 'cover_image', width: 80, align: 'center',
@@ -167,19 +171,11 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     },
     {
       title: '地址', dataIndex: 'address', width: 220,
-      render: (v, r) => (
-        <Input key={v} variant="borderless" placeholder="互寄地址" defaultValue={v || ''}
-          onBlur={(e) => { if (e.target.value !== (v || '')) handleUpdate(r.id, 'address', e.target.value); }}
-          onPressEnter={(e) => e.target.blur()} />
-      ),
+      render: (v, r) => <InlineEdit value={v} placeholder="互寄地址" onCommit={(val) => handleUpdate(r.id, 'address', val)} />,
     },
     {
       title: '备注', dataIndex: 'notes', width: 160,
-      render: (v, r) => (
-        <Input key={v} variant="borderless" placeholder="—" defaultValue={v || ''}
-          onBlur={(e) => { if (e.target.value !== (v || '')) handleUpdate(r.id, 'notes', e.target.value); }}
-          onPressEnter={(e) => e.target.blur()} />
-      ),
+      render: (v, r) => <InlineEdit value={v} placeholder="—" onCommit={(val) => handleUpdate(r.id, 'notes', val)} />,
     },
     ...(products.length > 0 ? [
       itemsCollapsed
