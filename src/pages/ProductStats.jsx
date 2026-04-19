@@ -5,7 +5,7 @@ import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
 import EditOptionsModal from '../components/EditOptionsModal';
 
-export default function ProductStats({ products, onUpdate, onReloadProduct, onRemoveProduct, onImageModal }) {
+export default function ProductStats({ products, onUpdate, onReloadProduct, onAppendProduct, onRemoveProduct, onReorderProductsLocal, onImageModal }) {
   const { message } = App.useApp();
   const [types, setTypes] = useState([]);
   const [characters, setCharacters] = useState([]);
@@ -40,8 +40,8 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onRe
   };
 
   const handleAddRow = async (defaults = {}) => {
-    await api.createProduct({ name: '新制品', total: 0, notes: '', ...defaults });
-    onUpdate();
+    const created = await api.createProduct({ name: '新制品', total: 0, notes: '', ...defaults });
+    onAppendProduct(created.id);
   };
 
   const renderGroupFooter = (groupBy, key) => {
@@ -53,9 +53,9 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onRe
   };
 
   const handleReorder = async (next) => {
+    onReorderProductsLocal(next);
     const order = next.map((p, i) => ({ id: p.id, sort_order: i + 1 }));
     await api.reorderProducts(order);
-    onUpdate();
   };
 
   const optionSelect = (list, value, onChange) => (

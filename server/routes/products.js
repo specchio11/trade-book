@@ -69,9 +69,14 @@ router.get('/:id', async (req, res) => {
 // Create product
 router.post('/', async (req, res) => {
   const { name, total, notes, type_id, character_id } = req.body;
+  const { rows: maxRows } = await pool.query(
+    'SELECT COALESCE(MAX(sort_order), 0) AS m FROM products WHERE user_id = $1',
+    [req.userId]
+  );
+  const nextSort = (maxRows[0]?.m || 0) + 1;
   const { rows } = await pool.query(
-    'INSERT INTO products (user_id, name, total, notes, type_id, character_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-    [req.userId, name, parseInt(total) || 0, notes || '', type_id ? parseInt(type_id) : null, character_id ? parseInt(character_id) : null]
+    'INSERT INTO products (user_id, name, total, notes, type_id, character_id, sort_order) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+    [req.userId, name, parseInt(total) || 0, notes || '', type_id ? parseInt(type_id) : null, character_id ? parseInt(character_id) : null, nextSort]
   );
   res.json(rows[0]);
 });

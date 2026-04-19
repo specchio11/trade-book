@@ -49,7 +49,7 @@ function SortableThumb({ img, onDelete }) {
   );
 }
 
-export default function RegisterItemsModal({ swap, products, methods = [], onClose, onSaved }) {
+export default function RegisterItemsModal({ swap, products, methods = [], onClose, onCreated, onUpdated }) {
   const [form] = Form.useForm();
   const isNew = !swap.id;
   const [selectedMethodId, setSelectedMethodId] = useState(swap.swap_method_id || methods[0]?.id || null);
@@ -67,6 +67,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(!isNew);
   const imagesDirtyRef = useRef(false);
+  const dirtyProductIdsRef = useRef(new Set());
   const tmpIdRef = useRef(0);
 
   const reloadImages = useCallback(async () => {
@@ -176,7 +177,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   };
 
   const handleClose = () => {
-    if (imagesDirtyRef.current) onSaved();
+    if (imagesDirtyRef.current) onUpdated?.(swap.id, []);
     onClose();
   };
 
@@ -189,8 +190,15 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
         product_id: p.id,
         quantity: parseInt(quantities[p.id]) || 0,
       })).filter(it => it.quantity > 0);
+      // Determine which products' remaining will be affected (any whose quantity changed vs. initial)
+      const affected = new Set();
+      for (const p of sorted) {
+        const before = initial[p.id] || 0;
+        const after = parseInt(quantities[p.id]) || 0;
+        if (before !== after) affected.add(p.id);
+      }
       if (isNew) {
-        await api.createSwap({
+        const created = await api.createSwap({
           nickname: values.nickname || '',
           qq: values.qq || '',
           swap_method_id: values.method || null,
@@ -200,6 +208,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
           items,
           images: images.map(i => i.data),
         });
+        onCreated?.(created.id, [...affected]);
       } else {
         await api.updateSwap(swap.id, {
           nickname: values.nickname || '',
@@ -210,8 +219,8 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
           notes: values.notes || '',
         });
         await api.updateSwapItems(swap.id, items);
+        onUpdated?.(swap.id, [...affected]);
       }
-      onSaved();
       onClose();
     } finally {
       setSubmitting(false);

@@ -29,7 +29,7 @@ function InlineEdit({ value, onCommit, placeholder }) {
   );
 }
 
-export default function SwapStats({ swaps, products, methods, onUpdate, onReloadSwap, onReloadProduct, onRemoveSwap, onEditMethods, onImageModal }) {
+export default function SwapStats({ swaps, products, methods, onUpdate, onReloadSwap, onReloadProduct, onAppendSwap, onRemoveSwap, onReorderSwapsLocal, onEditMethods, onImageModal }) {
   const { message } = App.useApp();
   const [groupBy, setGroupBy] = useState(null);
   const [registerSwap, setRegisterSwap] = useState(null);
@@ -117,9 +117,9 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
   };
 
   const handleReorder = async (next) => {
+    onReorderSwapsLocal(next);
     const order = next.map((s, i) => ({ id: s.id, sort_order: i + 1 }));
     await api.reorderSwaps(order);
-    onUpdate();
   };
 
   const columns = [
@@ -354,7 +354,14 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
           products={products}
           methods={methods}
           onClose={() => setRegisterSwap(null)}
-          onSaved={onUpdate}
+          onCreated={(newId, affectedProductIds) => {
+            onAppendSwap(newId);
+            affectedProductIds.forEach(pid => onReloadProduct(pid));
+          }}
+          onUpdated={(swapId, affectedProductIds) => {
+            onReloadSwap(swapId);
+            affectedProductIds.forEach(pid => onReloadProduct(pid));
+          }}
         />
       )}
     </>

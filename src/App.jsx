@@ -83,12 +83,26 @@ export default function App() {
   const reloadProduct = useCallback(async (id) => {
     try { patchProduct(await api.getProduct(id)); } catch { /* ignore */ }
   }, [patchProduct]);
+  const appendSwap = useCallback(async (id) => {
+    try {
+      const s = await api.getSwap(id);
+      setSwaps(prev => prev.some(x => x.id === id) ? prev.map(x => x.id === id ? { ...x, ...s } : x) : [...prev, s]);
+    } catch { /* ignore */ }
+  }, []);
+  const appendProduct = useCallback(async (id) => {
+    try {
+      const p = await api.getProduct(id);
+      setProducts(prev => prev.some(x => x.id === id) ? prev.map(x => x.id === id ? { ...x, ...p } : x) : [...prev, p]);
+    } catch { /* ignore */ }
+  }, []);
   const removeSwapLocal = useCallback((id) => {
     setSwaps(prev => prev.filter(x => x.id !== id));
   }, []);
   const removeProductLocal = useCallback((id) => {
     setProducts(prev => prev.filter(x => x.id !== id));
   }, []);
+  const reorderSwapsLocal = useCallback((next) => setSwaps(next), []);
+  const reorderProductsLocal = useCallback((next) => setProducts(next), []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -120,7 +134,9 @@ export default function App() {
             products={products}
             onUpdate={loadProducts}
             onReloadProduct={reloadProduct}
+            onAppendProduct={appendProduct}
             onRemoveProduct={removeProductLocal}
+            onReorderProductsLocal={reorderProductsLocal}
             onImageModal={setImageModal}
           />
         ) : (
@@ -131,7 +147,9 @@ export default function App() {
             onUpdate={reloadAfterSwapChange}
             onReloadSwap={reloadSwap}
             onReloadProduct={reloadProduct}
+            onAppendSwap={appendSwap}
             onRemoveSwap={removeSwapLocal}
+            onReorderSwapsLocal={reorderSwapsLocal}
             onEditMethods={() => setShowEditMethods(true)}
             onImageModal={setImageModal}
           />
