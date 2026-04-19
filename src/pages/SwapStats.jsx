@@ -318,6 +318,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
         <RegisterItemsModal
           swap={registerSwap}
           products={products}
+          methods={methods}
           onClose={() => setRegisterSwap(null)}
           onSaved={onUpdate}
         />
