@@ -56,6 +56,27 @@ body {
   padding: 0;
   text-align: center;
 }
+
+/* Resizable column handle */
+.react-resizable {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  z-index: 1;
+  width: 10px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+}
+
+.react-resizable-handle:hover {
+  background: rgba(124, 58, 237, 0.2);
+}
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {

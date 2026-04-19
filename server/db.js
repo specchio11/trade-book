@@ -68,6 +68,26 @@ export async function initDB() {
       quantity INTEGER NOT NULL DEFAULT 0,
       UNIQUE(swap_id, product_id)
     );
+
+    ALTER TABLE swaps ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+    ALTER TABLE swaps ADD COLUMN IF NOT EXISTS address TEXT DEFAULT '';
+
+    CREATE TABLE IF NOT EXISTS product_types (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS characters (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      sort_order INTEGER DEFAULT 0
+    );
+
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS type_id INTEGER REFERENCES product_types(id) ON DELETE SET NULL;
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL;
   `);
 
   // Seed default admin user if empty

@@ -8,6 +8,7 @@ import productsRouter from './routes/products.js';
 import swapsRouter from './routes/swaps.js';
 import methodsRouter from './routes/methods.js';
 import usersRouter from './routes/users.js';
+import { createOptionsRouter } from './routes/options.js';
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use('/api/products', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, productsRouter);
 app.use('/api/swaps', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, swapsRouter);
 app.use('/api/methods', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, methodsRouter);
+app.use('/api/product-types', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, createOptionsRouter('product_types'));
+app.use('/api/characters', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, createOptionsRouter('characters'));
 app.use('/api/users', usersRouter);
 
 // Serve React build

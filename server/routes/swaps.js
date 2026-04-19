@@ -10,7 +10,7 @@ router.get('/', async (req, res) => {
     FROM swaps s
     LEFT JOIN swap_methods sm ON sm.id = s.swap_method_id
     WHERE s.user_id = $1
-    ORDER BY sm.sort_order, s.id
+    ORDER BY s.sort_order, s.id
   `, [req.userId]);
   for (const swap of swaps) {
     const { rows: items } = await pool.query(
@@ -71,7 +71,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
-  const allowed = ['nickname', 'qq', 'swap_method_id', 'is_packed', 'is_swapped', 'received_product', 'notes'];
+  const allowed = ['nickname', 'qq', 'swap_method_id', 'is_packed', 'is_swapped', 'received_product', 'notes', 'address'];
   const sets = [];
   const vals = [];
   let i = 1;
@@ -125,6 +125,28 @@ router.put('/:id/items', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   await pool.query('DELETE FROM swaps WHERE id = $1 AND user_id = $2', [parseInt(req.params.id), req.userId]);
   res.json({ ok: true });
+});
+
+// Reorder swaps
+router.put('/reorder', async (req, res) => {
+  const { order } = req.body;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const item of order) {
+      await client.query(
+        'UPDATE swaps SET sort_order = $1 WHERE id = $2 AND user_id = $3',
+        [parseInt(item.sort_order), parseInt(item.id), req.userId]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 });
 
 // Swap images

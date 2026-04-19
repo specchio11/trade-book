@@ -35,6 +35,7 @@ export const api = {
   createProduct: (data) => request('/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (id, data) => request(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   deleteProduct: (id) => request(`/products/${id}`, { method: 'DELETE' }),
+  reorderProducts: (order) => request('/products/reorder', { method: 'PUT', body: JSON.stringify({ order }) }),
   getProductImages: (id) => request(`/products/${id}/images`),
   uploadProductImage: (id, data) => request(`/products/${id}/images`, { method: 'POST', body: JSON.stringify({ data }) }),
   setCoverImage: (productId, imageId) => request(`/products/${productId}/images/${imageId}/cover`, { method: 'PATCH' }),
@@ -46,6 +47,7 @@ export const api = {
   updateSwap: (id, data) => request(`/swaps/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   updateSwapItems: (id, items) => request(`/swaps/${id}/items`, { method: 'PUT', body: JSON.stringify({ items }) }),
   deleteSwap: (id) => request(`/swaps/${id}`, { method: 'DELETE' }),
+  reorderSwaps: (order) => request('/swaps/reorder', { method: 'PUT', body: JSON.stringify({ order }) }),
   uploadSwapImage: (id, data) => request(`/swaps/${id}/images`, { method: 'POST', body: JSON.stringify({ data }) }),
   deleteSwapImage: (swapId, imageId) => request(`/swaps/${swapId}/images/${imageId}`, { method: 'DELETE' }),
 
@@ -55,4 +57,18 @@ export const api = {
   updateMethod: (id, name) => request(`/methods/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
   deleteMethod: (id) => request(`/methods/${id}`, { method: 'DELETE' }),
   reorderMethods: (order) => request('/methods/reorder', { method: 'PUT', body: JSON.stringify({ order }) }),
+
+  // Product types
+  getProductTypes: () => request('/product-types'),
+  createProductType: (name) => request('/product-types', { method: 'POST', body: JSON.stringify({ name }) }),
+  updateProductType: (id, name) => request(`/product-types/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
+  deleteProductType: (id) => request(`/product-types/${id}`, { method: 'DELETE' }),
+  reorderProductTypes: (order) => request('/product-types/reorder', { method: 'PUT', body: JSON.stringify({ order }) }),
+
+  // Characters
+  getCharacters: () => request('/characters'),
+  createCharacter: (name) => request('/characters', { method: 'POST', body: JSON.stringify({ name }) }),
+  updateCharacter: (id, name) => request(`/characters/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
+  deleteCharacter: (id) => request(`/characters/${id}`, { method: 'DELETE' }),
+  reorderCharacters: (order) => request('/characters/reorder', { method: 'PUT', body: JSON.stringify({ order }) }),
 };

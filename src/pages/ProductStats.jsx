@@ -1,9 +1,24 @@
-import { Table, Button, InputNumber, Input, Popconfirm, App } from 'antd';
-import { DeleteOutlined, PlusOutlined, PictureOutlined } from '@ant-design/icons';
+import { useState, useEffect } from 'react';
+import { Button, InputNumber, Input, Popconfirm, App, Select, Space, Tooltip, Tag } from 'antd';
+import { DeleteOutlined, PlusOutlined, PictureOutlined, SettingOutlined } from '@ant-design/icons';
 import { api } from '../api';
+import SortableTable, { DragHandle } from '../components/SortableTable';
+import EditOptionsModal from '../components/EditOptionsModal';
 
 export default function ProductStats({ products, onUpdate, onImageModal }) {
   const { message } = App.useApp();
+  const [types, setTypes] = useState([]);
+  const [characters, setCharacters] = useState([]);
+  const [editingOptions, setEditingOptions] = useState(null); // 'type' | 'character'
+  const [groupBy, setGroupBy] = useState(null); // null | 'type_id' | 'character_id'
+
+  const loadOptions = async () => {
+    const [t, c] = await Promise.all([api.getProductTypes(), api.getCharacters()]);
+    setTypes(t);
+    setCharacters(c);
+  };
+
+  useEffect(() => { loadOptions(); }, []);
 
   const handleUpdate = async (id, field, value) => {
     await api.updateProduct(id, { [field]: value });
@@ -29,10 +44,39 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
     onUpdate();
   };
 
+  const handleReorder = async (next) => {
+    const order = next.map((p, i) => ({ id: p.id, sort_order: i + 1 }));
+    await api.reorderProducts(order);
+    onUpdate();
+  };
+
+  const optionSelect = (list, value, onChange) => (
+    <Select
+      variant="borderless"
+      allowClear
+      value={value || undefined}
+      placeholder="—"
+      style={{ width: '100%' }}
+      options={list.map(o => ({ value: o.id, label: o.name }))}
+      onChange={onChange}
+    />
+  );
+
+  const headerWithSetting = (label, target) => (
+    <span>
+      {label}{' '}
+      <Tooltip title="编辑选项">
+        <Button size="small" type="text" icon={<SettingOutlined />} onClick={(e) => { e.stopPropagation(); setEditingOptions(target); }} />
+      </Tooltip>
+    </span>
+  );
+
   const columns = [
+    { key: 'sort', width: 40, align: 'center', render: () => <DragHandle /> },
     {
       title: '预览图',
       dataIndex: 'cover_image',
+      key: 'cover_image',
       width: 90,
       render: (cover, record) => (
         <div className="preview-thumb" onClick={() => handleImageClick(record)}>
@@ -43,21 +87,40 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
     {
       title: '名称',
       dataIndex: 'name',
+      width: 180,
       render: (v, r) => (
-        <Input
-          variant="borderless"
-          defaultValue={v}
+        <Input variant="borderless" defaultValue={v}
           onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'name', e.target.value); }}
-          onPressEnter={(e) => e.target.blur()}
-        />
+          onPressEnter={(e) => e.target.blur()} />
       ),
+    },
+    {
+      title: headerWithSetting('制品类型', 'type'),
+      dataIndex: 'type_id',
+      width: 140,
+      render: (v, r) => optionSelect(types, v, (val) => handleUpdate(r.id, 'type_id', val ?? null)),
+    },
+    {
+      title: headerWithSetting('角色', 'character'),
+      dataIndex: 'character_id',
+      width: 140,
+      render: (v, r) => optionSelect(characters, v, (val) => handleUpdate(r.id, 'character_id', val ?? null)),
     },
     {
       title: '剩余',
       dataIndex: 'remaining',
       width: 80,
       align: 'center',
-      render: (v) => <span style={{ color: v < 5 ? '#dc2626' : 'inherit', fontWeight: 600 }}>{v}</span>,
+      render: (v) => {
+        if (v < 0) {
+          return (
+            <Tooltip title="超额：已兑换数量大于总数">
+              <Tag color="red" style={{ fontWeight: 700, fontSize: 14, border: '1px solid #dc2626' }}>{v} ⚠</Tag>
+            </Tooltip>
+          );
+        }
+        return <Tag color={v < 5 ? 'red' : 'default'} style={{ fontWeight: 600, fontSize: 14 }}>{v}</Tag>;
+      },
     },
     {
       title: '总数',
@@ -66,6 +129,7 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
       align: 'center',
       render: (v, r) => (
         <InputNumber
+          key={`total-${r.id}-${v}`}
           min={0}
           variant="borderless"
           defaultValue={v}
@@ -76,23 +140,15 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
         />
       ),
     },
-    {
-      title: '已兑换',
-      dataIndex: 'exchanged',
-      width: 80,
-      align: 'center',
-    },
+    { title: '已兑换', dataIndex: 'exchanged', width: 80, align: 'center' },
     {
       title: '备注',
       dataIndex: 'notes',
+      width: 200,
       render: (v, r) => (
-        <Input
-          variant="borderless"
-          placeholder="备注"
-          defaultValue={v || ''}
+        <Input variant="borderless" placeholder="备注" defaultValue={v || ''}
           onBlur={(e) => { if (e.target.value !== (v || '')) handleUpdate(r.id, 'notes', e.target.value); }}
-          onPressEnter={(e) => e.target.blur()}
-        />
+          onPressEnter={(e) => e.target.blur()} />
       ),
     },
     {
@@ -108,17 +164,69 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
     },
   ];
 
+  const groupOptions = [
+    { value: null, label: '不分组' },
+    { value: 'type_id', label: '按制品类型' },
+    { value: 'character_id', label: '按角色' },
+  ];
+
+  const getGroupLabel = (key, field) => {
+    const list = field === 'type_id' ? types : characters;
+    return list.find(o => String(o.id) === key)?.name || '（未分类）';
+  };
+
   return (
-    <Table
-      rowKey="id"
-      columns={columns}
-      dataSource={products}
-      pagination={false}
-      bordered
-      size="middle"
-      footer={() => (
-        <Button type="dashed" block icon={<PlusOutlined />} onClick={handleAddRow}>添加一行</Button>
+    <>
+      <Space style={{ marginBottom: 12 }}>
+        <span>分组：</span>
+        <Select
+          value={groupBy}
+          options={groupOptions}
+          onChange={setGroupBy}
+          style={{ width: 160 }}
+        />
+      </Space>
+
+      <SortableTable
+        columns={columns}
+        dataSource={products}
+        onReorder={handleReorder}
+        groupBy={groupBy}
+        getGroupLabel={getGroupLabel}
+        storageKey="products"
+        pagination={false}
+        bordered
+        size="middle"
+        scroll={{ x: 'max-content' }}
+        footer={() => (
+          <Button type="dashed" block icon={<PlusOutlined />} onClick={handleAddRow}>添加一行</Button>
+        )}
+      />
+
+      {editingOptions === 'type' && (
+        <EditOptionsModal
+          title="编辑制品类型"
+          fetchAll={api.getProductTypes}
+          create={api.createProductType}
+          update={api.updateProductType}
+          remove={api.deleteProductType}
+          reorder={api.reorderProductTypes}
+          onClose={() => setEditingOptions(null)}
+          onSaved={() => { loadOptions(); onUpdate(); }}
+        />
       )}
-    />
+      {editingOptions === 'character' && (
+        <EditOptionsModal
+          title="编辑角色"
+          fetchAll={api.getCharacters}
+          create={api.createCharacter}
+          update={api.updateCharacter}
+          remove={api.deleteCharacter}
+          reorder={api.reorderCharacters}
+          onClose={() => setEditingOptions(null)}
+          onSaved={() => { loadOptions(); onUpdate(); }}
+        />
+      )}
+    </>
   );
 }

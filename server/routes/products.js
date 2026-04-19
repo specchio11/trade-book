@@ -7,12 +7,16 @@ const router = Router();
 router.get('/', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT p.*,
+      pt.name AS type_name,
+      c.name AS character_name,
       COALESCE(SUM(si.quantity), 0)::int AS exchanged,
       (p.total - COALESCE(SUM(si.quantity), 0))::int AS remaining
     FROM products p
     LEFT JOIN swap_items si ON si.product_id = p.id
+    LEFT JOIN product_types pt ON pt.id = p.type_id
+    LEFT JOIN characters c ON c.id = p.character_id
     WHERE p.user_id = $1
-    GROUP BY p.id
+    GROUP BY p.id, pt.name, c.name
     ORDER BY p.sort_order, p.id
   `, [req.userId]);
   // Attach cover image
@@ -40,14 +44,16 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
-  const allowed = ['name', 'total', 'notes'];
+  const allowed = ['name', 'total', 'notes', 'type_id', 'character_id'];
   const sets = [];
   const vals = [];
   let i = 1;
   for (const [key, val] of Object.entries(updates)) {
     if (allowed.includes(key)) {
       sets.push(`${key} = $${i}`);
-      vals.push(key === 'total' ? parseInt(val) : val);
+      if (key === 'total') vals.push(parseInt(val));
+      else if (key === 'type_id' || key === 'character_id') vals.push(val ? parseInt(val) : null);
+      else vals.push(val);
       i++;
     }
   }
@@ -64,6 +70,28 @@ router.patch('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   await pool.query('DELETE FROM products WHERE id = $1 AND user_id = $2', [parseInt(req.params.id), req.userId]);
   res.json({ ok: true });
+});
+
+// Reorder products
+router.put('/reorder', async (req, res) => {
+  const { order } = req.body; // [{id, sort_order}, ...]
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    for (const item of order) {
+      await client.query(
+        'UPDATE products SET sort_order = $1 WHERE id = $2 AND user_id = $3',
+        [parseInt(item.sort_order), parseInt(item.id), req.userId]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ ok: true });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 });
 
 // Get product images
