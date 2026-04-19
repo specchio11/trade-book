@@ -149,10 +149,20 @@ export default function SortableTable({ dataSource, groupBy, getGroupValue, getG
     };
   });
 
+  const allKeys = items.map(i => i.key);
+  const groupSig = `${groupBy}:${allKeys.join('|')}`;
+  const [activeKey, setActiveKey] = React.useState(allKeys);
+  const sigRef = React.useRef(groupSig);
+  if (sigRef.current !== groupSig) {
+    sigRef.current = groupSig;
+    // Re-expand whenever groupBy or the set of groups changes
+    queueMicrotask(() => setActiveKey(allKeys));
+  }
+
   return (
     <Collapse
-      key={`${groupBy}:${items.map(i => i.key).join('|')}`}
-      defaultActiveKey={items.map(i => i.key)}
+      activeKey={activeKey}
+      onChange={(keys) => setActiveKey(Array.isArray(keys) ? keys : [keys])}
       items={items}
     />
   );
