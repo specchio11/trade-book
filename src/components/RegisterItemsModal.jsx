@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { Modal, InputNumber, Tag, Typography, Empty, Form, Input, Radio, Divider, Upload, Button, Spin } from 'antd';
-import { PictureOutlined, UploadOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { Modal, InputNumber, Tag, Typography, Empty, Form, Input, Radio, Divider, Upload, Spin } from 'antd';
+import { PictureOutlined, InboxOutlined, DeleteOutlined } from '@ant-design/icons';
+import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
+import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
+
+const { Dragger } = Upload;
 
 function readFileAsDataURL(file) {
   return new Promise((resolve) => {
@@ -9,6 +14,39 @@ function readFileAsDataURL(file) {
     reader.onload = () => resolve(reader.result);
     reader.readAsDataURL(file);
   });
+}
+
+function SortableThumb({ img, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: img.id });
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    position: 'relative',
+    width: 72, height: 72, borderRadius: 6,
+    overflow: 'hidden', cursor: 'grab',
+    border: '1px solid #eee',
+    opacity: isDragging ? 0.5 : 1,
+    flexShrink: 0,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <img src={img.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onDelete(img.id); }}
+        style={{
+          position: 'absolute', top: 2, right: 2, border: 'none',
+          background: 'rgba(0,0,0,.6)', color: '#fff', borderRadius: '50%',
+          width: 22, height: 22, cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', padding: 0,
+        }}
+        title="删除"
+      >
+        <DeleteOutlined style={{ fontSize: 12 }} />
+      </button>
+    </div>
+  );
 }
 
 export default function RegisterItemsModal({ swap, products, methods = [], onClose, onSaved }) {
@@ -23,16 +61,21 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   }, [swap]);
   const [quantities, setQuantities] = useState(initial);
 
-  const [existingImages, setExistingImages] = useState([]);
-  const [removedImageIds, setRemovedImageIds] = useState(() => new Set());
-  const [newImages, setNewImages] = useState([]);
+  const [images, setImages] = useState([]);
   const [loadingImages, setLoadingImages] = useState(true);
+  const imagesDirtyRef = useRef(false);
+
+  const reloadImages = useCallback(async () => {
+    const imgs = await api.getSwapImages(swap.id);
+    setImages(imgs);
+    return imgs;
+  }, [swap.id]);
 
   useEffect(() => {
     let alive = true;
     api.getSwapImages(swap.id).then(imgs => {
       if (alive) {
-        setExistingImages(imgs);
+        setImages(imgs);
         setLoadingImages(false);
       }
     });
@@ -71,9 +114,13 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   const processFiles = useCallback(async (files) => {
     const list = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (list.length === 0) return;
-    const dataUrls = await Promise.all(list.map(f => readFileAsDataURL(f)));
-    setNewImages(prev => [...prev, ...dataUrls]);
-  }, []);
+    for (const file of list) {
+      const data = await readFileAsDataURL(file);
+      await api.uploadSwapImage(swap.id, data);
+    }
+    imagesDirtyRef.current = true;
+    await reloadImages();
+  }, [swap.id, reloadImages]);
 
   useEffect(() => {
     const handlePaste = (e) => {
@@ -90,9 +137,29 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
     return () => window.removeEventListener('paste', handlePaste);
   }, [processFiles]);
 
-  const removeExisting = (id) => setRemovedImageIds(prev => { const n = new Set(prev); n.add(id); return n; });
-  const undoRemoveExisting = (id) => setRemovedImageIds(prev => { const n = new Set(prev); n.delete(id); return n; });
-  const removeNew = (idx) => setNewImages(prev => prev.filter((_, i) => i !== idx));
+  const handleDeleteImage = async (id) => {
+    await api.deleteSwapImage(swap.id, id);
+    imagesDirtyRef.current = true;
+    await reloadImages();
+  };
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const oldI = images.findIndex(i => i.id === active.id);
+    const newI = images.findIndex(i => i.id === over.id);
+    if (oldI < 0 || newI < 0) return;
+    const next = arrayMove(images, oldI, newI);
+    setImages(next);
+    imagesDirtyRef.current = true;
+    await api.reorderSwapImages(swap.id, next.map(i => i.id));
+  };
+
+  const handleClose = () => {
+    if (imagesDirtyRef.current) onSaved();
+    onClose();
+  };
 
   const handleSubmit = async () => {
     let values;
@@ -105,8 +172,6 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
         address: isMail ? (values.address || '') : '',
         notes: values.notes || '',
       });
-      for (const id of removedImageIds) await api.deleteSwapImage(swap.id, id);
-      for (const data of newImages) await api.uploadSwapImage(swap.id, data);
       const items = sorted.map(p => ({
         product_id: p.id,
         quantity: parseInt(quantities[p.id]) || 0,
@@ -119,14 +184,11 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
     }
   };
 
-  const visibleExisting = existingImages.filter(img => !removedImageIds.has(img.id));
-  const removedList = existingImages.filter(img => removedImageIds.has(img.id));
-
   return (
     <Modal
       open
       title={`登记互换 — ${swap.nickname || ''}`}
-      onCancel={onClose}
+      onCancel={handleClose}
       onOk={handleSubmit}
       okText="保存"
       cancelText="取消"
@@ -168,58 +230,33 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
             <Spin size="small" />
           ) : (
             <>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                {visibleExisting.map(img => (
-                  <div key={img.id} style={{ position: 'relative', width: 72, height: 72, borderRadius: 6, overflow: 'hidden', border: '1px solid #eee' }}>
-                    <img src={img.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button
-                      type="button"
-                      onClick={() => removeExisting(img.id)}
-                      style={{
-                        position: 'absolute', top: 2, right: 2, border: 'none',
-                        background: 'rgba(0,0,0,.6)', color: '#fff', borderRadius: '50%',
-                        width: 22, height: 22, cursor: 'pointer', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center', padding: 0,
-                      }}
-                      title="移除"
-                    >
-                      <DeleteOutlined style={{ fontSize: 12 }} />
-                    </button>
-                  </div>
-                ))}
-                {newImages.map((img, i) => (
-                  <div key={`n-${i}`} style={{ position: 'relative', width: 72, height: 72, borderRadius: 6, overflow: 'hidden', border: '1px dashed #7c3aed' }}>
-                    <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button
-                      type="button"
-                      onClick={() => removeNew(i)}
-                      style={{
-                        position: 'absolute', top: 2, right: 2, border: 'none',
-                        background: 'rgba(0,0,0,.6)', color: '#fff', borderRadius: '50%',
-                        width: 22, height: 22, cursor: 'pointer', display: 'flex',
-                        alignItems: 'center', justifyContent: 'center', padding: 0,
-                      }}
-                      title="移除"
-                    >
-                      <DeleteOutlined style={{ fontSize: 12 }} />
-                    </button>
-                  </div>
-                ))}
-                {removedList.map(img => (
-                  <div
-                    key={`r-${img.id}`}
-                    style={{ position: 'relative', width: 72, height: 72, borderRadius: 6, overflow: 'hidden', border: '1px solid #fca5a5', opacity: 0.4, cursor: 'pointer' }}
-                    title="将被删除（点击撤销）"
-                    onClick={() => undoRemoveExisting(img.id)}
-                  >
-                    <img src={img.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                ))}
-              </div>
-              <Upload accept="image/*" multiple showUploadList={false} beforeUpload={(file, list) => { processFiles(list); return false; }}>
-                <Button icon={<UploadOutlined />} size="small">上传图片</Button>
-              </Upload>
-              <Typography.Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>支持 Ctrl+V 粘贴</Typography.Text>
+              <Dragger
+                multiple
+                accept="image/*"
+                showUploadList={false}
+                beforeUpload={(file, list) => { processFiles(list); return false; }}
+                style={{ padding: 8 }}
+              >
+                <p className="ant-upload-drag-icon" style={{ marginBottom: 4 }}><InboxOutlined /></p>
+                <p className="ant-upload-text" style={{ fontSize: 13 }}>点击、拖拽或 Ctrl+V 粘贴图片</p>
+              </Dragger>
+
+              {images.length > 0 && (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={images.map(i => i.id)} strategy={horizontalListSortingStrategy}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                      {images.map(img => (
+                        <SortableThumb key={img.id} img={img} onDelete={handleDeleteImage} />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+              {images.length > 0 && (
+                <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 6 }}>
+                  💡 拖拽缩略图可调整顺序，第一张为封面
+                </Typography.Text>
+              )}
             </>
           )}
         </Form.Item>
