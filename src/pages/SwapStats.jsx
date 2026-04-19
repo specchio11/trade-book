@@ -18,7 +18,10 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
   const [groupBy, setGroupBy] = useState(null);
   const [registerSwap, setRegisterSwap] = useState(null);
   const [itemsCollapsed, setItemsCollapsed] = useState(() => {
-    try { return localStorage.getItem('swapItemsCollapsed') === '1'; } catch { return false; }
+    try {
+      const v = localStorage.getItem('swapItemsCollapsed');
+      return v === null ? true : v === '1';
+    } catch { return true; }
   });
   const toggleCollapsed = () => {
     setItemsCollapsed(v => {

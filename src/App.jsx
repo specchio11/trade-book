@@ -11,7 +11,7 @@ import EditMethodsModal from './components/EditMethodsModal';
 import UserSwitcher from './components/UserSwitcher';
 
 export default function App() {
-  const [tab, setTab] = useState('products');
+  const [tab, setTab] = useState('swaps');
   const [products, setProducts] = useState([]);
   const [swaps, setSwaps] = useState([]);
   const [methods, setMethods] = useState([]);
