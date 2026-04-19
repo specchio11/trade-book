@@ -37,6 +37,35 @@ router.get('/covers', async (req, res) => {
   res.json(covers.map(c => ({ product_id: c.product_id, cover_image: { id: c.id, data: c.data, is_cover: c.is_cover } })));
 });
 
+// Get a single product (with cover_image) for granular row refresh
+router.get('/:id', async (req, res) => {
+  const productId = parseInt(req.params.id);
+  if (Number.isNaN(productId)) return res.status(400).json({ error: 'Invalid id' });
+  const { rows } = await pool.query(`
+    SELECT p.*,
+      pt.name AS type_name,
+      pt.sort_order AS type_sort,
+      c.name AS character_name,
+      c.sort_order AS character_sort,
+      COALESCE(SUM(si.quantity), 0)::int AS exchanged,
+      (p.total - COALESCE(SUM(si.quantity), 0))::int AS remaining
+    FROM products p
+    LEFT JOIN swap_items si ON si.product_id = p.id
+    LEFT JOIN product_types pt ON pt.id = p.type_id
+    LEFT JOIN characters c ON c.id = p.character_id
+    WHERE p.id = $1 AND p.user_id = $2
+    GROUP BY p.id, pt.name, pt.sort_order, c.name, c.sort_order
+  `, [productId, req.userId]);
+  if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
+  const product = rows[0];
+  const { rows: coverRows } = await pool.query(
+    'SELECT id, data, is_cover FROM product_images WHERE product_id = $1 ORDER BY is_cover DESC, sort_order LIMIT 1',
+    [productId]
+  );
+  product.cover_image = coverRows[0] ? { id: coverRows[0].id, data: coverRows[0].data, is_cover: coverRows[0].is_cover } : null;
+  res.json(product);
+});
+
 // Create product
 router.post('/', async (req, res) => {
   const { name, total, notes, type_id, character_id } = req.body;

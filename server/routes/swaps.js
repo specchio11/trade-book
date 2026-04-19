@@ -48,6 +48,33 @@ router.get('/covers', async (req, res) => {
   res.json(covers.map(c => ({ swap_id: c.swap_id, cover_image: { id: c.id, data: c.data } })));
 });
 
+// Get a single swap (with items, image_count, cover_image) for granular row refresh
+router.get('/:id', async (req, res) => {
+  const swapId = parseInt(req.params.id);
+  if (Number.isNaN(swapId)) return res.status(400).json({ error: 'Invalid id' });
+  const { rows } = await pool.query(`
+    SELECT s.*, sm.name AS method_name, sm.sort_order AS method_sort
+    FROM swaps s
+    LEFT JOIN swap_methods sm ON sm.id = s.swap_method_id
+    WHERE s.id = $1 AND s.user_id = $2
+  `, [swapId, req.userId]);
+  if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
+  const swap = rows[0];
+  const { rows: items } = await pool.query(
+    `SELECT si.*, p.name AS product_name FROM swap_items si JOIN products p ON p.id = si.product_id WHERE si.swap_id = $1`,
+    [swapId]
+  );
+  const { rows: countRows } = await pool.query('SELECT COUNT(*)::int AS n FROM swap_images WHERE swap_id = $1', [swapId]);
+  const { rows: coverRows } = await pool.query(
+    'SELECT id, data FROM swap_images WHERE swap_id = $1 ORDER BY sort_order, id LIMIT 1',
+    [swapId]
+  );
+  swap.items = items;
+  swap.image_count = countRows[0]?.n || 0;
+  swap.cover_image = coverRows[0] ? { id: coverRows[0].id, data: coverRows[0].data } : null;
+  res.json(swap);
+});
+
 // Get all images for a single swap (lazy-loaded on modal open)
 router.get('/:id/images', async (req, res) => {
   const swapId = parseInt(req.params.id);

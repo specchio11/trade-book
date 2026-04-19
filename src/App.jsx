@@ -70,6 +70,26 @@ export default function App() {
     }).catch(() => {});
   }, []);
 
+  // Granular per-row patches — avoid blanket refresh that re-renders all images
+  const patchSwap = useCallback((s) => {
+    setSwaps(prev => prev.map(x => x.id === s.id ? { ...x, ...s } : x));
+  }, []);
+  const patchProduct = useCallback((p) => {
+    setProducts(prev => prev.map(x => x.id === p.id ? { ...x, ...p } : x));
+  }, []);
+  const reloadSwap = useCallback(async (id) => {
+    try { patchSwap(await api.getSwap(id)); } catch { /* ignore (e.g. just-deleted) */ }
+  }, [patchSwap]);
+  const reloadProduct = useCallback(async (id) => {
+    try { patchProduct(await api.getProduct(id)); } catch { /* ignore */ }
+  }, [patchProduct]);
+  const removeSwapLocal = useCallback((id) => {
+    setSwaps(prev => prev.filter(x => x.id !== id));
+  }, []);
+  const removeProductLocal = useCallback((id) => {
+    setProducts(prev => prev.filter(x => x.id !== id));
+  }, []);
+
   useEffect(() => { loadData(); }, [loadData]);
 
   return (
@@ -96,9 +116,25 @@ export default function App() {
 
       <div style={{ padding: '0 24px 24px' }}>
         {tab === 'products' ? (
-          <ProductStats products={products} onUpdate={loadProducts} onImageModal={setImageModal} />
+          <ProductStats
+            products={products}
+            onUpdate={loadProducts}
+            onReloadProduct={reloadProduct}
+            onRemoveProduct={removeProductLocal}
+            onImageModal={setImageModal}
+          />
         ) : (
-          <SwapStats swaps={swaps} products={products} methods={methods} onUpdate={reloadAfterSwapChange} onEditMethods={() => setShowEditMethods(true)} onImageModal={setImageModal} />
+          <SwapStats
+            swaps={swaps}
+            products={products}
+            methods={methods}
+            onUpdate={reloadAfterSwapChange}
+            onReloadSwap={reloadSwap}
+            onReloadProduct={reloadProduct}
+            onRemoveSwap={removeSwapLocal}
+            onEditMethods={() => setShowEditMethods(true)}
+            onImageModal={setImageModal}
+          />
         )}
       </div>
 

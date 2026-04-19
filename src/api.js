@@ -32,6 +32,7 @@ export const api = {
 
   // Products
   getProducts: () => request('/products'),
+  getProduct: (id) => request(`/products/${id}`),
   getProductCovers: () => request('/products/covers'),
   createProduct: (data) => request('/products', { method: 'POST', body: JSON.stringify(data) }),
   updateProduct: (id, data) => request(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
@@ -45,6 +46,7 @@ export const api = {
 
   // Swaps
   getSwaps: () => request('/swaps'),
+  getSwap: (id) => request(`/swaps/${id}`),
   getSwapCovers: () => request('/swaps/covers'),
   createSwap: (data) => request('/swaps', { method: 'POST', body: JSON.stringify(data) }),
   updateSwap: (id, data) => request(`/swaps/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),

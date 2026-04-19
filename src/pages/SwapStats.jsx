@@ -29,7 +29,7 @@ function InlineEdit({ value, onCommit, placeholder }) {
   );
 }
 
-export default function SwapStats({ swaps, products, methods, onUpdate, onEditMethods, onImageModal }) {
+export default function SwapStats({ swaps, products, methods, onUpdate, onReloadSwap, onReloadProduct, onRemoveSwap, onEditMethods, onImageModal }) {
   const { message } = App.useApp();
   const [groupBy, setGroupBy] = useState(null);
   const [registerSwap, setRegisterSwap] = useState(null);
@@ -48,7 +48,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
 
   const handleUpdate = async (id, field, value) => {
     await api.updateSwap(id, { [field]: value });
-    onUpdate();
+    onReloadSwap(id);
   };
 
   const handleItemQtyChange = async (swap, productId, newQty) => {
@@ -68,13 +68,17 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       };
     });
     await api.updateSwapItems(swap.id, items);
-    onUpdate();
+    onReloadSwap(swap.id);
+    onReloadProduct(productId);
   };
 
   const handleDelete = async (id) => {
+    const swap = swaps.find(s => s.id === id);
+    const affectedProductIds = (swap?.items || []).map(it => it.product_id);
     await api.deleteSwap(id);
     message.success('已删除');
-    onUpdate();
+    onRemoveSwap(id);
+    affectedProductIds.forEach(pid => onReloadProduct(pid));
   };
 
   const handleAddRow = (defaults = {}) => {

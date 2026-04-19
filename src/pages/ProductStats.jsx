@@ -5,7 +5,7 @@ import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
 import EditOptionsModal from '../components/EditOptionsModal';
 
-export default function ProductStats({ products, onUpdate, onImageModal }) {
+export default function ProductStats({ products, onUpdate, onReloadProduct, onRemoveProduct, onImageModal }) {
   const { message } = App.useApp();
   const [types, setTypes] = useState([]);
   const [characters, setCharacters] = useState([]);
@@ -22,13 +22,13 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
 
   const handleUpdate = async (id, field, value) => {
     await api.updateProduct(id, { [field]: value });
-    onUpdate();
+    onReloadProduct(id);
   };
 
   const handleDelete = async (id) => {
     await api.deleteProduct(id);
     message.success('已删除');
-    onUpdate();
+    onRemoveProduct(id);
   };
 
   const handleImageClick = async (product) => {
