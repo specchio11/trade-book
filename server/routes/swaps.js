@@ -66,10 +66,15 @@ router.post('/', async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const { rows: maxRows } = await client.query(
+      'SELECT COALESCE(MAX(sort_order), 0) AS m FROM swaps WHERE user_id = $1',
+      [req.userId]
+    );
+    const nextSort = (maxRows[0]?.m || 0) + 1;
     const { rows } = await client.query(
-      `INSERT INTO swaps (user_id, nickname, qq, swap_method_id, received_product, notes, address, is_packed, is_swapped)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-      [req.userId, nickname, qq, swap_method_id ? parseInt(swap_method_id) : null, received_product || '', notes || '', address || '', !!is_packed, !!is_swapped]
+      `INSERT INTO swaps (user_id, nickname, qq, swap_method_id, received_product, notes, address, is_packed, is_swapped, sort_order)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [req.userId, nickname, qq, swap_method_id ? parseInt(swap_method_id) : null, received_product || '', notes || '', address || '', !!is_packed, !!is_swapped, nextSort]
     );
     const swap = rows[0];
     if (items && items.length > 0) {

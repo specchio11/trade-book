@@ -61,7 +61,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
   const handleAddRow = async (defaults = {}) => {
     await api.createSwap({
       nickname: '新互换', qq: '',
-      swap_method_id: methods[0]?.id || null,
+      swap_method_id: null,
       received_product: '', notes: '', items: [], images: [],
       ...defaults,
     });
