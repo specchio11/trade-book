@@ -97,6 +97,11 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
         </span>
       ),
       dataIndex: 'swap_method_id', width: 160,
+      sorter: (a, b) => {
+        const an = methods.find(m => m.id === a.swap_method_id)?.name || '';
+        const bn = methods.find(m => m.id === b.swap_method_id)?.name || '';
+        return an.localeCompare(bn);
+      },
       render: (v, r) => (
         <Select variant="borderless" value={v || undefined} placeholder="选择" style={{ width: '100%' }}
           options={methods.map(m => ({ value: m.id, label: <Tag color={methodColor(m.name)}>{m.name}</Tag> }))}
@@ -105,10 +110,12 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     },
     {
       title: '已包装', dataIndex: 'is_packed', width: 80, align: 'center',
+      sorter: (a, b) => Number(a.is_packed) - Number(b.is_packed),
       render: (v, r) => <Checkbox checked={v} onChange={(e) => handleUpdate(r.id, 'is_packed', e.target.checked)} />,
     },
     {
       title: '已互换', dataIndex: 'is_swapped', width: 80, align: 'center',
+      sorter: (a, b) => Number(a.is_swapped) - Number(b.is_swapped),
       render: (v, r) => <Checkbox checked={v} onChange={(e) => handleUpdate(r.id, 'is_swapped', e.target.checked)} />,
     },
     ...(products.length > 0 ? [{

@@ -98,12 +98,14 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
       title: headerWithSetting('制品类型', 'type'),
       dataIndex: 'type_id',
       width: 140,
+      sorter: (a, b) => (a.type_name || '').localeCompare(b.type_name || ''),
       render: (v, r) => optionSelect(types, v, (val) => handleUpdate(r.id, 'type_id', val ?? null)),
     },
     {
       title: headerWithSetting('角色', 'character'),
       dataIndex: 'character_id',
       width: 140,
+      sorter: (a, b) => (a.character_name || '').localeCompare(b.character_name || ''),
       render: (v, r) => optionSelect(characters, v, (val) => handleUpdate(r.id, 'character_id', val ?? null)),
     },
     {
@@ -111,6 +113,7 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
       dataIndex: 'remaining',
       width: 80,
       align: 'center',
+      sorter: (a, b) => (a.remaining || 0) - (b.remaining || 0),
       render: (v) => {
         if (v < 0) {
           return (
@@ -127,6 +130,7 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
       dataIndex: 'total',
       width: 110,
       align: 'center',
+      sorter: (a, b) => (a.total || 0) - (b.total || 0),
       render: (v, r) => (
         <InputNumber
           key={`total-${r.id}-${v}`}
@@ -140,7 +144,13 @@ export default function ProductStats({ products, onUpdate, onImageModal }) {
         />
       ),
     },
-    { title: '已兑换', dataIndex: 'exchanged', width: 80, align: 'center' },
+    {
+      title: '已兑换',
+      dataIndex: 'exchanged',
+      width: 80,
+      align: 'center',
+      sorter: (a, b) => (a.exchanged || 0) - (b.exchanged || 0),
+    },
     {
       title: '备注',
       dataIndex: 'notes',
