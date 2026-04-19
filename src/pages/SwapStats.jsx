@@ -145,71 +145,6 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       sorter: (a, b) => Number(a.is_swapped) - Number(b.is_swapped),
       render: (v, r) => <Checkbox checked={v} onChange={(e) => handleUpdate(r.id, 'is_swapped', e.target.checked)} />,
     },
-    ...(products.length > 0 ? [
-      itemsCollapsed
-        ? {
-            title: (
-              <Space size={4}>
-                <span>互换制品</span>
-                <Tooltip title="展开制品列">
-                  <Button size="small" type="text" icon={<DoubleRightOutlined />} onClick={(e) => { e.stopPropagation(); toggleCollapsed(); }} />
-                </Tooltip>
-              </Space>
-            ),
-            key: 'items_collapsed',
-            width: 140,
-            align: 'center',
-            render: (_, r) => {
-              const total = (r.items || []).reduce((sum, it) => sum + (it.quantity || 0), 0);
-              const kinds = (r.items || []).filter(it => it.quantity > 0).length;
-              return (
-                <Tooltip title="点击详情可登记制品">
-                  <Button type="link" size="small" onClick={() => setRegisterSwap(r)}>
-                    {total > 0 ? `${kinds} 种 / 共 ${total}` : '未登记'}
-                  </Button>
-                </Tooltip>
-              );
-            },
-          }
-        : {
-            title: (
-              <Space size={4}>
-                <span>互换制品</span>
-                <Tooltip title="折叠制品列">
-                  <Button size="small" type="text" icon={<DoubleLeftOutlined />} onClick={(e) => { e.stopPropagation(); toggleCollapsed(); }} />
-                </Tooltip>
-              </Space>
-            ),
-            children: [...products]
-        .sort((a, b) => {
-          const at = a.type_sort ?? Infinity;
-          const bt = b.type_sort ?? Infinity;
-          if (at !== bt) return at - bt;
-          return (a.sort_order ?? 0) - (b.sort_order ?? 0);
-        })
-        .map(p => ({
-        title: (
-          <div style={{ textAlign: 'center' }}>
-            <div>{p.name}</div>
-            <Tag color={p.remaining < 5 ? 'red' : 'default'} style={{ marginTop: 2 }}>余{p.remaining}</Tag>
-          </div>
-        ),
-        key: `p_${p.id}`, width: 110, align: 'center',
-        render: (_, r) => {
-          const item = r.items?.find(i => i.product_id === p.id);
-          return (
-            <InputNumber min={0} variant="borderless" placeholder="—"
-              value={item?.quantity || undefined}
-              onBlur={(e) => {
-                const n = e.target.value === '' ? 0 : parseInt(e.target.value);
-                if (!isNaN(n) && n !== (item?.quantity || 0)) handleItemQtyChange(r, p.id, n);
-              }}
-              style={{ width: '100%' }} />
-          );
-        },
-      })),
-          }
-    ] : []),
     {
       title: '对方互换制品', dataIndex: 'received_product', width: 160,
       render: (v, r) => (
@@ -242,6 +177,57 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
           onPressEnter={(e) => e.target.blur()} />
       ),
     },
+    ...(products.length > 0 ? [
+      itemsCollapsed
+        ? {
+            title: '互换制品',
+            key: 'items_collapsed',
+            width: 140,
+            align: 'center',
+            render: (_, r) => {
+              const total = (r.items || []).reduce((sum, it) => sum + (it.quantity || 0), 0);
+              const kinds = (r.items || []).filter(it => it.quantity > 0).length;
+              return (
+                <Tooltip title="点击详情可登记制品">
+                  <Button type="link" size="small" onClick={() => setRegisterSwap(r)}>
+                    {total > 0 ? `${kinds} 种 / 共 ${total}` : '未登记'}
+                  </Button>
+                </Tooltip>
+              );
+            },
+          }
+        : {
+            title: '互换制品',
+            children: [...products]
+              .sort((a, b) => {
+                const at = a.type_sort ?? Infinity;
+                const bt = b.type_sort ?? Infinity;
+                if (at !== bt) return at - bt;
+                return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+              })
+              .map(p => ({
+                title: (
+                  <div style={{ textAlign: 'center' }}>
+                    <div>{p.name}</div>
+                    <Tag color={p.remaining < 5 ? 'red' : 'default'} style={{ marginTop: 2 }}>余{p.remaining}</Tag>
+                  </div>
+                ),
+                key: `p_${p.id}`, width: 110, align: 'center',
+                render: (_, r) => {
+                  const item = r.items?.find(i => i.product_id === p.id);
+                  return (
+                    <InputNumber min={0} variant="borderless" placeholder="—"
+                      value={item?.quantity || undefined}
+                      onBlur={(e) => {
+                        const n = e.target.value === '' ? 0 : parseInt(e.target.value);
+                        if (!isNaN(n) && n !== (item?.quantity || 0)) handleItemQtyChange(r, p.id, n);
+                      }}
+                      style={{ width: '100%' }} />
+                  );
+                },
+              })),
+          }
+    ] : []),
     {
       title: '操作', key: 'action', width: 110, align: 'center', fixed: 'right',
       render: (_, r) => (
@@ -294,6 +280,14 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       <Space style={{ marginBottom: 12 }}>
         <span>分组：</span>
         <Select value={groupBy} options={groupOptions} onChange={setGroupBy} style={{ width: 180 }} />
+        {products.length > 0 && (
+          <Button
+            icon={itemsCollapsed ? <DoubleRightOutlined /> : <DoubleLeftOutlined />}
+            onClick={toggleCollapsed}
+          >
+            {itemsCollapsed ? '展开互换制品列' : '折叠互换制品列'}
+          </Button>
+        )}
       </Space>
 
       <SortableTable
