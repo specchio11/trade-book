@@ -196,6 +196,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
       cancelText="取消"
       confirmLoading={submitting}
       width={620}
+      maskClosable={false}
       styles={{ body: { maxHeight: '75vh', overflowY: 'auto' } }}
     >
       <Form
