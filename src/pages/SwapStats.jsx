@@ -143,7 +143,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       })),
     }] : []),
     {
-      title: '收到制品', dataIndex: 'received_product', width: 160,
+      title: '对方互换制品', dataIndex: 'received_product', width: 160,
       render: (v, r) => (
         <Input variant="borderless" placeholder="—" defaultValue={v || ''}
           onBlur={(e) => { if (e.target.value !== (v || '')) handleUpdate(r.id, 'received_product', e.target.value); }}
@@ -151,7 +151,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       ),
     },
     {
-      title: '收图', dataIndex: 'images', width: 80, align: 'center',
+      title: '对方制品图', dataIndex: 'images', width: 80, align: 'center',
       render: (imgs, r) => (
         <div className="preview-thumb" onClick={() => openSwapImages(r)}>
           {imgs?.length > 0 ? <img src={imgs[0].data} alt="" /> : <PictureOutlined style={{ fontSize: 22, color: '#bbb' }} />}
