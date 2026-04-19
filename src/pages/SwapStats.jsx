@@ -105,7 +105,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     {
       title: '昵称', dataIndex: 'nickname', width: 140, fixed: 'left',
       render: (v, r) => (
-        <Input variant="borderless" defaultValue={v}
+        <Input key={v} variant="borderless" defaultValue={v}
           onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'nickname', e.target.value); }}
           onPressEnter={(e) => e.target.blur()} />
       ),
@@ -113,7 +113,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     {
       title: 'QQ', dataIndex: 'qq', width: 140, fixed: 'left',
       render: (v, r) => (
-        <Input variant="borderless" defaultValue={v}
+        <Input key={v} variant="borderless" defaultValue={v}
           onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'qq', e.target.value); }}
           onPressEnter={(e) => e.target.blur()} />
       ),
@@ -152,7 +152,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     {
       title: '对方互换制品', dataIndex: 'received_product', width: 160,
       render: (v, r) => (
-        <Input variant="borderless" placeholder="—" defaultValue={v || ''}
+        <Input key={v} variant="borderless" placeholder="—" defaultValue={v || ''}
           onBlur={(e) => { if (e.target.value !== (v || '')) handleUpdate(r.id, 'received_product', e.target.value); }}
           onPressEnter={(e) => e.target.blur()} />
       ),
@@ -168,7 +168,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     {
       title: '地址', dataIndex: 'address', width: 220,
       render: (v, r) => (
-        <Input variant="borderless" placeholder="互寄地址" defaultValue={v || ''}
+        <Input key={v} variant="borderless" placeholder="互寄地址" defaultValue={v || ''}
           onBlur={(e) => { if (e.target.value !== (v || '')) handleUpdate(r.id, 'address', e.target.value); }}
           onPressEnter={(e) => e.target.blur()} />
       ),
@@ -176,7 +176,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
     {
       title: '备注', dataIndex: 'notes', width: 160,
       render: (v, r) => (
-        <Input variant="borderless" placeholder="—" defaultValue={v || ''}
+        <Input key={v} variant="borderless" placeholder="—" defaultValue={v || ''}
           onBlur={(e) => { if (e.target.value !== (v || '')) handleUpdate(r.id, 'notes', e.target.value); }}
           onPressEnter={(e) => e.target.blur()} />
       ),

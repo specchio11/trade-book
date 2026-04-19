@@ -189,7 +189,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   return (
     <Modal
       open
-      title={swap.nickname ? `登记互换 — ${swap.nickname}` : '添加互换'}
+      title={swap.nickname ? `编辑互换 — ${swap.nickname}` : '添加互换'}
       onCancel={handleClose}
       onOk={handleSubmit}
       okText="保存"
