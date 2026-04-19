@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Modal, Button, Upload, Image, Popconfirm, Space, Typography, App as AntdApp } from 'antd';
 import { UploadOutlined, DeleteOutlined, StarOutlined, InboxOutlined } from '@ant-design/icons';
+import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
+import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
 
 const { Dragger } = Upload;
@@ -11,6 +14,31 @@ function readFileAsDataURL(file) {
     reader.onload = () => resolve(reader.result);
     reader.readAsDataURL(file);
   });
+}
+
+function Thumb({ img, active, onClick, isCoverEffective }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: img.id });
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    position: 'relative', width: 64, height: 64, borderRadius: 6,
+    overflow: 'hidden', cursor: 'grab',
+    border: active ? '2px solid #7c3aed' : '1px solid #eee',
+    opacity: isDragging ? 0.5 : 1,
+    flexShrink: 0,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} onClick={onClick}>
+      <img src={img.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+      {isCoverEffective && (
+        <span style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          background: 'rgba(124,58,237,.85)', color: '#fff',
+          fontSize: 10, textAlign: 'center', pointerEvents: 'none',
+        }}>封面</span>
+      )}
+    </div>
+  );
 }
 
 export default function ImagePreviewModal({ type, targetId, targetName, images: initialImages, currentIndex: initIdx, onClose, onUpdate }) {
@@ -35,10 +63,14 @@ export default function ImagePreviewModal({ type, targetId, targetName, images: 
   const current = images[idx];
 
   const setCover = async () => {
-    if (!isProduct || !current) return;
-    await api.setCoverImage(targetId, current.id);
+    if (!current) return;
+    if (isProduct) await api.setCoverImage(targetId, current.id);
+    else await api.setSwapCoverImage(targetId, current.id);
     message.success('已设为封面');
-    await reload();
+    const updated = await reload();
+    // Cover is moved to position 0 → keep selection on same image
+    const newIdx = updated.findIndex(im => im.id === current.id);
+    if (newIdx >= 0) setIdx(newIdx);
   };
 
   const processFiles = useCallback(async (files) => {
@@ -77,6 +109,26 @@ export default function ImagePreviewModal({ type, targetId, targetName, images: 
     setIdx(i => Math.min(i, updated.length - 1));
   };
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const oldI = images.findIndex(i => i.id === active.id);
+    const newI = images.findIndex(i => i.id === over.id);
+    if (oldI < 0 || newI < 0) return;
+    const next = arrayMove(images, oldI, newI);
+    setImages(next);
+    // Keep highlight on the same image
+    const curId = current?.id;
+    if (curId != null) {
+      const ni = next.findIndex(i => i.id === curId);
+      if (ni >= 0) setIdx(ni);
+    }
+    if (isProduct) await api.reorderProductImages(targetId, next.map(i => i.id));
+    else await api.reorderSwapImages(targetId, next.map(i => i.id));
+    onUpdate();
+  };
+
   const hasImages = images.length > 0;
 
   return (
@@ -100,40 +152,40 @@ export default function ImagePreviewModal({ type, targetId, targetName, images: 
             <div style={{ marginTop: 8, color: '#999' }}>{idx + 1} / {images.length}</div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-            {images.map((img, i) => (
-              <div
-                key={img.id}
-                onClick={() => setIdx(i)}
-                style={{
-                  position: 'relative', width: 64, height: 64, borderRadius: 6,
-                  overflow: 'hidden', cursor: 'pointer',
-                  border: i === idx ? '2px solid #7c3aed' : '1px solid #eee',
-                }}
-              >
-                <img src={img.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                {img.is_cover && (
-                  <span style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                    background: 'rgba(124,58,237,.85)', color: '#fff',
-                    fontSize: 10, textAlign: 'center',
-                  }}>封面</span>
-                )}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={images.map(i => i.id)} strategy={horizontalListSortingStrategy}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                {images.map((img, i) => (
+                  <Thumb
+                    key={img.id}
+                    img={img}
+                    active={i === idx}
+                    onClick={() => setIdx(i)}
+                    isCoverEffective={isProduct ? !!img.is_cover : i === 0}
+                  />
+                ))}
+                <Upload accept="image/*" multiple showUploadList={false} beforeUpload={(file, list) => { processFiles(list); return false; }}>
+                  <div style={{
+                    width: 64, height: 64, borderRadius: 6, border: '1px dashed #ccc',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', fontSize: 24, color: '#999',
+                  }}>+</div>
+                </Upload>
               </div>
-            ))}
-            <Upload accept="image/*" multiple showUploadList={false} beforeUpload={(file, list) => { processFiles(list); return false; }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: 6, border: '1px dashed #ccc',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', fontSize: 24, color: '#999',
-              }}>+</div>
-            </Upload>
-          </div>
+            </SortableContext>
+          </DndContext>
+          <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 6 }}>
+            💡 拖拽缩略图可以调整顺序
+          </Typography.Text>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
             <Space>
-              {isProduct && current && (
-                <Button icon={<StarOutlined />} onClick={setCover} disabled={current.is_cover}>设为封面</Button>
+              {current && (
+                <Button
+                  icon={<StarOutlined />}
+                  onClick={setCover}
+                  disabled={isProduct ? current.is_cover : idx === 0}
+                >设为封面</Button>
               )}
               <Upload accept="image/*" multiple showUploadList={false} beforeUpload={(file, list) => { processFiles(list); return false; }}>
                 <Button icon={<UploadOutlined />}>上传图片</Button>

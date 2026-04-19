@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, Input, InputNumber, Select, Checkbox, Tag, Popconfirm, App, Tooltip, Space } from 'antd';
-import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined, AppstoreAddOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined, AppstoreAddOutlined, DoubleLeftOutlined, DoubleRightOutlined } from '@ant-design/icons';
 import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
 import RegisterItemsModal from '../components/RegisterItemsModal';
@@ -17,6 +17,15 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
   const { message } = App.useApp();
   const [groupBy, setGroupBy] = useState(null);
   const [registerSwap, setRegisterSwap] = useState(null);
+  const [itemsCollapsed, setItemsCollapsed] = useState(() => {
+    try { return localStorage.getItem('swapItemsCollapsed') === '1'; } catch { return false; }
+  });
+  const toggleCollapsed = () => {
+    setItemsCollapsed(v => {
+      try { localStorage.setItem('swapItemsCollapsed', v ? '0' : '1'); } catch { /* noop */ }
+      return !v;
+    });
+  };
 
   const handleUpdate = async (id, field, value) => {
     await api.updateSwap(id, { [field]: value });
@@ -136,9 +145,42 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
       sorter: (a, b) => Number(a.is_swapped) - Number(b.is_swapped),
       render: (v, r) => <Checkbox checked={v} onChange={(e) => handleUpdate(r.id, 'is_swapped', e.target.checked)} />,
     },
-    ...(products.length > 0 ? [{
-      title: '互换制品',
-      children: [...products]
+    ...(products.length > 0 ? [
+      itemsCollapsed
+        ? {
+            title: (
+              <Space size={4}>
+                <span>互换制品</span>
+                <Tooltip title="展开制品列">
+                  <Button size="small" type="text" icon={<DoubleRightOutlined />} onClick={(e) => { e.stopPropagation(); toggleCollapsed(); }} />
+                </Tooltip>
+              </Space>
+            ),
+            key: 'items_collapsed',
+            width: 140,
+            align: 'center',
+            render: (_, r) => {
+              const total = (r.items || []).reduce((sum, it) => sum + (it.quantity || 0), 0);
+              const kinds = (r.items || []).filter(it => it.quantity > 0).length;
+              return (
+                <Tooltip title="点击详情可登记制品">
+                  <Button type="link" size="small" onClick={() => setRegisterSwap(r)}>
+                    {total > 0 ? `${kinds} 种 / 共 ${total}` : '未登记'}
+                  </Button>
+                </Tooltip>
+              );
+            },
+          }
+        : {
+            title: (
+              <Space size={4}>
+                <span>互换制品</span>
+                <Tooltip title="折叠制品列">
+                  <Button size="small" type="text" icon={<DoubleLeftOutlined />} onClick={(e) => { e.stopPropagation(); toggleCollapsed(); }} />
+                </Tooltip>
+              </Space>
+            ),
+            children: [...products]
         .sort((a, b) => {
           const at = a.type_sort ?? Infinity;
           const bt = b.type_sort ?? Infinity;
@@ -166,7 +208,8 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onEditMe
           );
         },
       })),
-    }] : []),
+          }
+    ] : []),
     {
       title: '对方互换制品', dataIndex: 'received_product', width: 160,
       render: (v, r) => (

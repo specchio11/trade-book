@@ -40,6 +40,7 @@ export const api = {
   getProductImages: (id) => request(`/products/${id}/images`),
   uploadProductImage: (id, data) => request(`/products/${id}/images`, { method: 'POST', body: JSON.stringify({ data }) }),
   setCoverImage: (productId, imageId) => request(`/products/${productId}/images/${imageId}/cover`, { method: 'PATCH' }),
+  reorderProductImages: (productId, order) => request(`/products/${productId}/images/reorder`, { method: 'PUT', body: JSON.stringify({ order }) }),
   deleteProductImage: (productId, imageId) => request(`/products/${productId}/images/${imageId}`, { method: 'DELETE' }),
 
   // Swaps
@@ -52,6 +53,8 @@ export const api = {
   reorderSwaps: (order) => request('/swaps/reorder', { method: 'PUT', body: JSON.stringify({ order }) }),
   uploadSwapImage: (id, data) => request(`/swaps/${id}/images`, { method: 'POST', body: JSON.stringify({ data }) }),
   deleteSwapImage: (swapId, imageId) => request(`/swaps/${swapId}/images/${imageId}`, { method: 'DELETE' }),
+  setSwapCoverImage: (swapId, imageId) => request(`/swaps/${swapId}/images/${imageId}/cover`, { method: 'PATCH' }),
+  reorderSwapImages: (swapId, order) => request(`/swaps/${swapId}/images/reorder`, { method: 'PUT', body: JSON.stringify({ order }) }),
   getSwapImages: (id) => request(`/swaps/${id}/images`),
 
   // Methods

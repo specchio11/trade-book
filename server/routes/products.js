@@ -130,6 +130,21 @@ router.patch('/:id/images/:imageId/cover', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Reorder product images
+router.put('/:id/images/reorder', async (req, res) => {
+  const { order } = req.body; // [imageId,...] in display order
+  if (!Array.isArray(order) || order.length === 0) return res.json({ ok: true });
+  const ids = order.map(i => parseInt(i));
+  const sorts = order.map((_, i) => i);
+  await pool.query(
+    `UPDATE product_images SET sort_order = u.sort_order::int
+     FROM (SELECT UNNEST($1::int[]) AS id, UNNEST($2::int[]) AS sort_order) u
+     WHERE product_images.id = u.id`,
+    [ids, sorts]
+  );
+  res.json({ ok: true });
+});
+
 // Delete product image
 router.delete('/:id/images/:imageId', async (req, res) => {
   const imageId = parseInt(req.params.imageId);

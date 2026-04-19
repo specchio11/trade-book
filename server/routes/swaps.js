@@ -192,4 +192,38 @@ router.delete('/:id/images/:imageId', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Set cover (move image to sort_order 0; shift others)
+router.patch('/:id/images/:imageId/cover', async (req, res) => {
+  const swapId = parseInt(req.params.id);
+  const imageId = parseInt(req.params.imageId);
+  const { rows } = await pool.query(
+    'SELECT id FROM swap_images WHERE swap_id = $1 ORDER BY sort_order, id',
+    [swapId]
+  );
+  const newOrder = [imageId, ...rows.map(r => r.id).filter(id => id !== imageId)];
+  const sorts = newOrder.map((_, i) => i);
+  await pool.query(
+    `UPDATE swap_images SET sort_order = u.sort_order::int
+     FROM (SELECT UNNEST($1::int[]) AS id, UNNEST($2::int[]) AS sort_order) u
+     WHERE swap_images.id = u.id`,
+    [newOrder, sorts]
+  );
+  res.json({ ok: true });
+});
+
+// Reorder swap images
+router.put('/:id/images/reorder', async (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order) || order.length === 0) return res.json({ ok: true });
+  const ids = order.map(i => parseInt(i));
+  const sorts = order.map((_, i) => i);
+  await pool.query(
+    `UPDATE swap_images SET sort_order = u.sort_order::int
+     FROM (SELECT UNNEST($1::int[]) AS id, UNNEST($2::int[]) AS sort_order) u
+     WHERE swap_images.id = u.id`,
+    [ids, sorts]
+  );
+  res.json({ ok: true });
+});
+
 export default router;
