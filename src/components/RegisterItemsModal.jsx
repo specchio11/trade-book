@@ -137,6 +137,14 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
     }
   };
 
+  const clearAll = (productList) => {
+    const next = { ...quantities };
+    for (const p of productList) {
+      next[p.id] = undefined;
+    }
+    setQuantities(next);
+  };
+
   const processFiles = useCallback(async (files) => {
     const list = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (list.length === 0) return;
@@ -342,7 +350,10 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Typography.Text strong style={{ fontSize: 15 }}>互换制品</Typography.Text>
           {sorted.length > 0 && (
-            <Button size="small" style={{ background: '#f0f5ff', borderColor: '#adc6ff', color: '#2f54eb', fontWeight: 600 }} onClick={() => fillAll(sorted)}>All</Button>
+            <>
+              <Button size="small" style={{ background: '#f0f5ff', borderColor: '#adc6ff', color: '#2f54eb', fontWeight: 600 }} onClick={() => fillAll(sorted)}>All</Button>
+              <Button size="small" style={{ background: '#fff2e8', borderColor: '#ffbb96', color: '#d4380d', fontWeight: 600 }} onClick={() => clearAll(sorted)}>清空</Button>
+            </>
           )}
         </div>
         <Divider style={{ margin: '8px 0 12px' }} />
@@ -355,6 +366,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Typography.Text type="secondary" style={{ fontSize: 13 }}>{typeName}</Typography.Text>
                 <Button size="small" style={{ fontSize: 12, padding: '0 6px', height: 20, background: '#f0f5ff', borderColor: '#adc6ff', color: '#2f54eb' }} onClick={() => fillAll(list)}>All</Button>
+                <Button size="small" style={{ fontSize: 12, padding: '0 6px', height: 20, background: '#fff2e8', borderColor: '#ffbb96', color: '#d4380d' }} onClick={() => clearAll(list)}>清空</Button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
                 {list.map(p => {
