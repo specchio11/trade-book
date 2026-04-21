@@ -86,10 +86,10 @@ body {
 
 /* Remove sorted column highlight (cells + header) */
 .ant-table-column-sort {
-  background: transparent !important;
+  background: inherit !important;
 }
 th.ant-table-column-sort {
-  background: transparent !important;
+  background: inherit !important;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
