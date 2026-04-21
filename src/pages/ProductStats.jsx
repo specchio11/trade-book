@@ -114,6 +114,7 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
       fixed: 'left',
       render: (v, r) => (
         <Input variant="borderless" defaultValue={v}
+          style={r.remaining <= 0 ? { color: '#cf1322', fontWeight: 700 } : r.remaining < 5 ? { color: '#d46b08', fontWeight: 600 } : undefined}
           onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'name', e.target.value); }}
           onPressEnter={(e) => e.target.blur()} />
       ),
@@ -248,6 +249,7 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
         groupSorter={groupSorter}
         groupFooter={renderGroupFooter}
         storageKey="products"
+        rowClassName={(r) => r.remaining <= 0 ? 'row-sold-out' : r.remaining < 5 ? 'row-low-stock' : ''}
         pagination={false}
         bordered
         size="middle"

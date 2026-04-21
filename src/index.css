@@ -77,6 +77,15 @@ body {
 .react-resizable-handle:hover {
   background: rgba(124, 58, 237, 0.2);
 }
+
+/* Product row highlights for low/zero remaining */
+.row-low-stock > td {
+  background: #fffbe6 !important;
+}
+.row-sold-out > td {
+  background: #fff1f0 !important;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
