@@ -342,7 +342,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Typography.Text strong style={{ fontSize: 15 }}>互换制品</Typography.Text>
           {sorted.length > 0 && (
-            <Button size="small" onClick={() => fillAll(sorted)}>All</Button>
+            <Button size="small" style={{ background: '#f0f5ff', borderColor: '#adc6ff', color: '#2f54eb', fontWeight: 600 }} onClick={() => fillAll(sorted)}>All</Button>
           )}
         </div>
         <Divider style={{ margin: '8px 0 12px' }} />
@@ -354,7 +354,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
             <div key={typeName} style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Typography.Text type="secondary" style={{ fontSize: 13 }}>{typeName}</Typography.Text>
-                <Button size="small" type="text" style={{ fontSize: 12, padding: '0 4px', height: 20 }} onClick={() => fillAll(list)}>All</Button>
+                <Button size="small" style={{ fontSize: 12, padding: '0 6px', height: 20, background: '#f0f5ff', borderColor: '#adc6ff', color: '#2f54eb' }} onClick={() => fillAll(list)}>All</Button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
                 {list.map(p => {
