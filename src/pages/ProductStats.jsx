@@ -22,7 +22,13 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
   useEffect(() => { loadOptions(); }, []);
 
   const handleUpdate = (id, field, value) => {
-    onPatchProduct({ id, [field]: value });
+    if (field === 'total') {
+      const product = products.find(p => p.id === id);
+      const exchanged = product?.exchanged || 0;
+      onPatchProduct({ id, total: value, remaining: value - exchanged });
+    } else {
+      onPatchProduct({ id, [field]: value });
+    }
     api.updateProduct(id, { [field]: value }).catch(() => {
       message.error('保存失败');
       onReloadProduct(id);
@@ -250,7 +256,7 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
         groupSorter={groupSorter}
         groupFooter={renderGroupFooter}
         storageKey="products"
-        rowClassName={(r) => r.remaining <= 0 ? 'row-sold-out' : r.remaining < 5 ? 'row-low-stock' : ''}
+        rowClassName={(r) => r.remaining <= 0 ? 'row-sold-out' : ''}
         pagination={false}
         bordered
         size="middle"
