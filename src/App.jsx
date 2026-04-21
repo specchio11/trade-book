@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, Button, Space, Typography } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { api } from './api';
+import { api, getAuthToken, setAuthToken, setOnAuthError } from './api';
 import ProductStats from './pages/ProductStats';
 import SwapStats from './pages/SwapStats';
+import LoginPage from './pages/LoginPage';
 import AddProductModal from './components/AddProductModal';
 
 import ImagePreviewModal from './components/ImagePreviewModal';
@@ -11,6 +12,8 @@ import EditMethodsModal from './components/EditMethodsModal';
 import UserSwitcher from './components/UserSwitcher';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [tab, setTab] = useState('swaps');
   const [products, setProducts] = useState([]);
   const [swaps, setSwaps] = useState([]);
@@ -104,7 +107,35 @@ export default function App() {
   const reorderSwapsLocal = useCallback((next) => setSwaps(next), []);
   const reorderProductsLocal = useCallback((next) => setProducts(next), []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  // Check auth on mount
+  useEffect(() => {
+    if (!getAuthToken()) { setAuthChecked(true); return; }
+    api.getMe()
+      .then(user => { setCurrentUser(user); setAuthChecked(true); })
+      .catch(() => { setAuthToken(null); setAuthChecked(true); });
+  }, []);
+
+  // On 401, go back to login
+  useEffect(() => {
+    setOnAuthError(() => { setCurrentUser(null); });
+  }, []);
+
+  useEffect(() => { if (currentUser) loadData(); }, [currentUser, loadData]);
+
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+    setAuthToken(null);
+    setCurrentUser(null);
+    setProducts([]);
+    setSwaps([]);
+    setMethods([]);
+  };
+
+  if (!authChecked) return null;
+  if (!currentUser) return <LoginPage onLogin={handleLogin} />;
 
   return (
     <div className="app">
@@ -113,7 +144,7 @@ export default function App() {
         <Space>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAddProduct(true)}>添加制品</Button>
           <Button type="primary" style={{ background: '#16a34a', borderColor: '#16a34a' }} icon={<PlusOutlined />} onClick={() => setShowAddSwap(true)}>添加互换</Button>
-          <UserSwitcher onUserChange={loadData} />
+          <UserSwitcher currentUser={currentUser} onUserChange={loadData} onLogout={handleLogout} />
         </Space>
       </header>
 

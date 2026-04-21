@@ -1,34 +1,74 @@
 const BASE = '/api';
 
-let currentUserId = parseInt(localStorage.getItem('userId')) || 1;
+let authToken = localStorage.getItem('authToken') || null;
+let currentUserId = null; // set after login or from token
+let onAuthError = null; // callback when 401 received
+
+export function setAuthToken(token) {
+  authToken = token;
+  if (token) {
+    localStorage.setItem('authToken', token);
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      currentUserId = payload.userId;
+    } catch { /* ignore */ }
+  } else {
+    localStorage.removeItem('authToken');
+    currentUserId = null;
+  }
+}
+
+export function getAuthToken() { return authToken; }
 
 export function setCurrentUserId(id) {
   currentUserId = id;
-  localStorage.setItem('userId', id);
 }
 
 export function getCurrentUserId() {
   return currentUserId;
 }
 
+export function setOnAuthError(cb) {
+  onAuthError = cb;
+}
+
+// Initialize from stored token
+if (authToken) {
+  try {
+    const payload = JSON.parse(atob(authToken.split('.')[1]));
+    currentUserId = payload.userId;
+  } catch { /* ignore */ }
+}
+
 async function request(url, options = {}) {
-  const res = await fetch(BASE + url, {
-    headers: {
-      'Content-Type': 'application/json',
-      'X-User-Id': String(currentUserId),
-      ...options.headers,
-    },
-    ...options,
-  });
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+  // Admin viewing another user's data
+  if (currentUserId) {
+    headers['X-View-As'] = String(currentUserId);
+  }
+  const res = await fetch(BASE + url, { ...options, headers });
+  if (res.status === 401) {
+    setAuthToken(null);
+    onAuthError?.();
+    throw new Error('Unauthorized');
+  }
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export const api = {
-  // Users
+  // Auth
+  login: (name, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ name, password }) }),
+  getMe: () => request('/auth/me'),
+
+  // Users (admin only)
   getUsers: () => request('/users'),
-  createUser: (name) => request('/users', { method: 'POST', body: JSON.stringify({ name }) }),
+  createUser: (name, password) => request('/users', { method: 'POST', body: JSON.stringify({ name, password }) }),
   deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+  resetPassword: (id, password) => request(`/users/${id}/password`, { method: 'PATCH', body: JSON.stringify({ password }) }),
 
   // Products
   getProducts: () => request('/products'),

@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { initDB } from './db.js';
+import { requireAuth, requireAdmin } from './middleware/auth.js';
+import authRouter from './routes/auth.js';
 import productsRouter from './routes/products.js';
 import swapsRouter from './routes/swaps.js';
 import methodsRouter from './routes/methods.js';
@@ -19,13 +21,16 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Extract user_id from header for data isolation
-app.use('/api/products', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, productsRouter);
-app.use('/api/swaps', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, swapsRouter);
-app.use('/api/methods', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, methodsRouter);
-app.use('/api/product-types', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, createOptionsRouter('product_types'));
-app.use('/api/characters', (req, res, next) => { req.userId = parseInt(req.headers['x-user-id']) || 1; next(); }, createOptionsRouter('characters'));
-app.use('/api/users', usersRouter);
+// Public auth routes (no token needed)
+app.use('/api/auth', authRouter);
+
+// All other API routes require authentication
+app.use('/api/products', requireAuth, productsRouter);
+app.use('/api/swaps', requireAuth, swapsRouter);
+app.use('/api/methods', requireAuth, methodsRouter);
+app.use('/api/product-types', requireAuth, createOptionsRouter('product_types'));
+app.use('/api/characters', requireAuth, createOptionsRouter('characters'));
+app.use('/api/users', requireAuth, requireAdmin, usersRouter);
 
 // Serve React build
 app.use(express.static(path.join(__dirname, '..', 'dist')));

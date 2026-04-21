@@ -1,4 +1,5 @@
 import pg from 'pg';
+import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 dotenv.config();
 const { Pool } = pg;
@@ -89,6 +90,9 @@ export async function initDB() {
     ALTER TABLE products ADD COLUMN IF NOT EXISTS type_id INTEGER REFERENCES product_types(id) ON DELETE SET NULL;
     ALTER TABLE products ADD COLUMN IF NOT EXISTS character_id INTEGER REFERENCES characters(id) ON DELETE SET NULL;
 
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
+
     -- Performance indexes
     CREATE INDEX IF NOT EXISTS idx_products_user ON products(user_id);
     CREATE INDEX IF NOT EXISTS idx_swaps_user ON swaps(user_id);
@@ -104,7 +108,8 @@ export async function initDB() {
   // Seed default admin user if empty
   const { rows: userRows } = await pool.query('SELECT COUNT(*) FROM users');
   if (parseInt(userRows[0].count) === 0) {
-    const { rows } = await pool.query("INSERT INTO users (name) VALUES ('Admin') RETURNING id");
+    const hash = await bcrypt.hash('admin123', 10);
+    const { rows } = await pool.query("INSERT INTO users (name, password_hash, role) VALUES ('Admin', $1, 'admin') RETURNING id", [hash]);
     const userId = rows[0].id;
     // Seed default swap methods for admin
     await pool.query(`
@@ -113,6 +118,16 @@ export async function initDB() {
       ($1, 'ACF', 2),
       ($1, '互寄', 3)
     `, [userId]);
+  }
+
+  // Ensure existing admin users have password and role set
+  const { rows: admins } = await pool.query("SELECT id FROM users WHERE role IS NULL OR role = '' OR password_hash IS NULL");
+  if (admins.length > 0) {
+    const hash = await bcrypt.hash('admin123', 10);
+    await pool.query("UPDATE users SET role = 'admin', password_hash = $1 WHERE id = $2", [hash, admins[0].id]);
+    for (let i = 1; i < admins.length; i++) {
+      await pool.query("UPDATE users SET role = COALESCE(NULLIF(role, ''), 'user'), password_hash = COALESCE(password_hash, $1) WHERE id = $2", [hash, admins[i].id]);
+    }
   }
 }
 
