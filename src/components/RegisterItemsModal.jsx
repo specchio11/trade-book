@@ -401,7 +401,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
                           : <PictureOutlined style={{ fontSize: 18, color: '#bbb' }} />}
                       </div>
                       <span style={{ flex: 1, fontWeight: highlighted || lowStock ? 600 : 400, color: lowStock ? '#cf1322' : highlighted ? '#92400e' : 'inherit' }}>{p.name}</span>
-                      <Tag color={lowStock ? 'red' : 'default'} style={{ fontWeight: lowStock ? 600 : 400 }}>余 {p.remaining}</Tag>
+                      <Tag color={lowStock ? 'red' : 'default'} style={{ fontWeight: lowStock ? 600 : 400, fontSize: 14 }}>余 {p.remaining}</Tag>
                       <InputNumber
                         min={0}
                         max={max}
