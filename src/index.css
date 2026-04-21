@@ -84,8 +84,11 @@ body {
   opacity: 0.65;
 }
 
-/* Remove sorted column gray highlight */
+/* Remove sorted column highlight (cells + header) */
 .ant-table-column-sort {
+  background: transparent !important;
+}
+th.ant-table-column-sort {
   background: transparent !important;
 }
 
