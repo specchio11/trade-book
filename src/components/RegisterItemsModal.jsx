@@ -384,9 +384,8 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
                         gap: 12,
                         padding: '6px 8px',
                         borderRadius: 6,
-                        background: highlighted ? '#fef3c7' : '#fafafa',
+                        background: disabled ? '#f5f5f5' : highlighted ? '#fef3c7' : '#fafafa',
                         border: highlighted ? '1px solid #fde68a' : '1px solid transparent',
-                        opacity: disabled ? 0.55 : 1,
                       }}
                     >
                       <div
@@ -400,8 +399,8 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
                           ? <img src={p.cover_image.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           : <PictureOutlined style={{ fontSize: 18, color: '#bbb' }} />}
                       </div>
-                      <span style={{ flex: 1, fontWeight: highlighted ? 600 : 400, color: highlighted ? '#92400e' : 'inherit' }}>{p.name}</span>
-                      <Tag color={p.remaining < 5 ? 'red' : 'default'}>余 {p.remaining}</Tag>
+                      <span style={{ flex: 1, fontWeight: highlighted ? 600 : 400, color: disabled ? '#bfbfbf' : highlighted ? '#92400e' : 'inherit', textDecoration: disabled ? 'line-through' : 'none' }}>{p.name}</span>
+                      <Tag color={disabled ? 'default' : p.remaining < 5 ? 'red' : 'default'} style={disabled ? { color: '#bfbfbf' } : undefined}>余 {p.remaining}</Tag>
                       <InputNumber
                         min={0}
                         max={max}
