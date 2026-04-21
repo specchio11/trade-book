@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, Select } from 'antd';
+import { Modal, Form, Input, InputNumber } from 'antd';
 import { api } from '../api';
 import ImageUploadZone from './ImageUploadZone';
+import CreatableSelect from './CreatableSelect';
 
 export default function AddProductModal({ onClose, onCreated }) {
   const [form] = Form.useForm();
@@ -60,10 +61,28 @@ export default function AddProductModal({ onClose, onCreated }) {
         </Form.Item>
         <div style={{ display: 'flex', gap: 12 }}>
           <Form.Item label="制品类型" name="type_id" style={{ flex: 1 }}>
-            <Select allowClear placeholder="选择类型" options={types.map(t => ({ value: t.id, label: t.name }))} />
+            <CreatableSelect
+              placeholder="选择类型"
+              options={types.map(t => ({ value: t.id, label: t.name }))}
+              onCreate={async (name) => {
+                const created = await api.createProductType(name);
+                const updated = await api.getProductTypes();
+                setTypes(updated);
+                return created.id;
+              }}
+            />
           </Form.Item>
           <Form.Item label="制品角色" name="character_id" style={{ flex: 1 }}>
-            <Select allowClear placeholder="选择角色" options={characters.map(c => ({ value: c.id, label: c.name }))} />
+            <CreatableSelect
+              placeholder="选择角色"
+              options={characters.map(c => ({ value: c.id, label: c.name }))}
+              onCreate={async (name) => {
+                const created = await api.createCharacter(name);
+                const updated = await api.getCharacters();
+                setCharacters(updated);
+                return created.id;
+              }}
+            />
           </Form.Item>
         </div>
         <Form.Item label="制品图片">

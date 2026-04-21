@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Modal, InputNumber, Tag, Typography, Empty, Form, Input, Radio, Divider, Upload, Spin } from 'antd';
+import { Modal, InputNumber, Tag, Typography, Empty, Form, Input, Radio, Divider, Upload, Spin, Button, App } from 'antd';
 import { PictureOutlined, InboxOutlined, DeleteOutlined } from '@ant-design/icons';
 import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
@@ -50,6 +50,7 @@ function SortableThumb({ img, onDelete }) {
 }
 
 export default function RegisterItemsModal({ swap, products, methods = [], onClose, onCreated, onUpdated }) {
+  const { message } = App.useApp();
   const [form] = Form.useForm();
   const isNew = !swap.id;
   const [selectedMethodId, setSelectedMethodId] = useState(swap.swap_method_id || methods[0]?.id || null);
@@ -117,6 +118,24 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
 
   const selectedMethod = methods.find(m => m.id === selectedMethodId);
   const isMail = selectedMethod?.name === '互寄';
+
+  const fillAll = (productList) => {
+    let skipped = 0;
+    const next = { ...quantities };
+    for (const p of productList) {
+      const ownPrev = initial[p.id] || 0;
+      const max = p.remaining + ownPrev;
+      if (max >= 1) {
+        next[p.id] = 1;
+      } else {
+        skipped++;
+      }
+    }
+    setQuantities(next);
+    if (skipped > 0) {
+      message.warning(`${skipped} 个制品余量不足，已跳过`);
+    }
+  };
 
   const processFiles = useCallback(async (files) => {
     const list = Array.from(files).filter(f => f.type.startsWith('image/'));
@@ -320,7 +339,12 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
           <Input placeholder="选填" />
         </Form.Item>
 
-        <Typography.Text strong style={{ fontSize: 15 }}>互换制品</Typography.Text>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Typography.Text strong style={{ fontSize: 15 }}>互换制品</Typography.Text>
+          {sorted.length > 0 && (
+            <Button size="small" onClick={() => fillAll(sorted)}>All</Button>
+          )}
+        </div>
         <Divider style={{ margin: '8px 0 12px' }} />
 
         {sorted.length === 0 ? (
@@ -328,7 +352,10 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
         ) : (
           groups.map(([typeName, list]) => (
             <div key={typeName} style={{ marginBottom: 16 }}>
-              <Typography.Text type="secondary" style={{ fontSize: 13 }}>{typeName}</Typography.Text>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Typography.Text type="secondary" style={{ fontSize: 13 }}>{typeName}</Typography.Text>
+                <Button size="small" type="text" style={{ fontSize: 12, padding: '0 4px', height: 20 }} onClick={() => fillAll(list)}>All</Button>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
                 {list.map(p => {
                   const ownPrev = initial[p.id] || 0;

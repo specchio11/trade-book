@@ -4,6 +4,7 @@ import { DeleteOutlined, PlusOutlined, PictureOutlined, SettingOutlined } from '
 import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
 import EditOptionsModal from '../components/EditOptionsModal';
+import CreatableSelect from '../components/CreatableSelect';
 
 export default function ProductStats({ products, onUpdate, onReloadProduct, onAppendProduct, onRemoveProduct, onPatchProduct, onReorderProductsLocal, onImageModal }) {
   const { message } = App.useApp();
@@ -66,8 +67,8 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
     await api.reorderProducts(order);
   };
 
-  const optionSelect = (list, value, onChange) => (
-    <Select
+  const creatableOptionSelect = (list, value, onChange, createFn) => (
+    <CreatableSelect
       variant="borderless"
       allowClear
       value={value || undefined}
@@ -75,6 +76,11 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
       style={{ width: '100%' }}
       options={list.map(o => ({ value: o.id, label: o.name }))}
       onChange={onChange}
+      onCreate={async (name) => {
+        const created = await createFn(name);
+        await loadOptions();
+        return created.id;
+      }}
     />
   );
 
@@ -121,7 +127,7 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
         const bi = types.findIndex(t => t.id === b.type_id);
         return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
       },
-      render: (v, r) => optionSelect(types, v, (val) => handleUpdate(r.id, 'type_id', val ?? null)),
+      render: (v, r) => creatableOptionSelect(types, v, (val) => handleUpdate(r.id, 'type_id', val ?? null), api.createProductType),
     },
     {
       title: headerWithSetting('角色', 'character'),
@@ -132,7 +138,7 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
         const bi = characters.findIndex(c => c.id === b.character_id);
         return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
       },
-      render: (v, r) => optionSelect(characters, v, (val) => handleUpdate(r.id, 'character_id', val ?? null)),
+      render: (v, r) => creatableOptionSelect(characters, v, (val) => handleUpdate(r.id, 'character_id', val ?? null), api.createCharacter),
     },
     {
       title: '剩余',
