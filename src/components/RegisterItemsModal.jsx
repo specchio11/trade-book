@@ -120,7 +120,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   const isMail = selectedMethod?.name === '互寄';
 
   const fillAll = (productList) => {
-    let skipped = 0;
+    const skippedNames = [];
     const next = { ...quantities };
     for (const p of productList) {
       const ownPrev = initial[p.id] || 0;
@@ -128,12 +128,12 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
       if (max >= 1) {
         next[p.id] = 1;
       } else {
-        skipped++;
+        skippedNames.push(p.name);
       }
     }
     setQuantities(next);
-    if (skipped > 0) {
-      message.warning(`${skipped} 个制品余量不足，已跳过`);
+    if (skippedNames.length > 0) {
+      message.warning(`余量不足已跳过：${skippedNames.join('、')}`);
     }
   };
 
