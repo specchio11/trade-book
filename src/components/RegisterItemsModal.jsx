@@ -375,7 +375,8 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
                   const disabled = max <= 0;
                   const qty = parseInt(quantities[p.id]) || 0;
                   const highlighted = qty > 0;
-                  return (
+                      const lowStock = p.remaining < 5;
+                      return (
                     <div
                       key={p.id}
                       style={{
@@ -399,8 +400,8 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
                           ? <img src={p.cover_image.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           : <PictureOutlined style={{ fontSize: 18, color: '#bbb' }} />}
                       </div>
-                      <span style={{ flex: 1, fontWeight: highlighted ? 600 : 400, color: disabled ? '#bfbfbf' : highlighted ? '#92400e' : 'inherit', textDecoration: disabled ? 'line-through' : 'none' }}>{p.name}</span>
-                      <Tag color={disabled ? 'default' : p.remaining < 5 ? 'red' : 'default'} style={disabled ? { color: '#bfbfbf' } : undefined}>余 {p.remaining}</Tag>
+                      <span style={{ flex: 1, fontWeight: highlighted || lowStock ? 600 : 400, color: lowStock ? '#cf1322' : highlighted ? '#92400e' : 'inherit' }}>{p.name}</span>
+                      <Tag color={lowStock ? 'red' : 'default'} style={{ fontWeight: lowStock ? 600 : 400 }}>余 {p.remaining}</Tag>
                       <InputNumber
                         min={0}
                         max={max}
