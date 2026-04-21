@@ -123,6 +123,7 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
       title: headerWithSetting('制品类型', 'type'),
       dataIndex: 'type_id',
       width: 140,
+      defaultSortOrder: 'ascend',
       sorter: (a, b) => {
         const ai = types.findIndex(t => t.id === a.type_id);
         const bi = types.findIndex(t => t.id === b.type_id);
