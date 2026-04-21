@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, InputNumber, Input, Popconfirm, App, Select, Space, Tooltip, Tag } from 'antd';
-import { DeleteOutlined, PlusOutlined, PictureOutlined, SettingOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, PictureOutlined, SettingOutlined, ExclamationCircleFilled } from '@ant-design/icons';
 import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
 import EditOptionsModal from '../components/EditOptionsModal';
@@ -119,10 +119,21 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
       width: 180,
       fixed: 'left',
       render: (v, r) => (
-        <Input variant="borderless" defaultValue={v}
-          style={r.remaining <= 0 ? { color: '#cf1322', fontWeight: 700 } : r.remaining < 5 ? { color: '#d46b08', fontWeight: 600 } : undefined}
-          onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'name', e.target.value); }}
-          onPressEnter={(e) => e.target.blur()} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Input variant="borderless" defaultValue={v}
+            onBlur={(e) => { if (e.target.value !== v) handleUpdate(r.id, 'name', e.target.value); }}
+            onPressEnter={(e) => e.target.blur()} />
+          {r.remaining <= 0 && (
+            <Tooltip title="已无余量">
+              <ExclamationCircleFilled style={{ color: '#cf1322', fontSize: 14, flexShrink: 0 }} />
+            </Tooltip>
+          )}
+          {r.remaining > 0 && r.remaining < 5 && (
+            <Tooltip title={`余量不足，仅剩 ${r.remaining}`}>
+              <ExclamationCircleFilled style={{ color: '#faad14', fontSize: 14, flexShrink: 0 }} />
+            </Tooltip>
+          )}
+        </div>
       ),
     },
     {
