@@ -29,7 +29,7 @@ function InlineEdit({ value, onCommit, placeholder }) {
   );
 }
 
-export default function SwapStats({ swaps, products, methods, onUpdate, onReloadSwap, onReloadProduct, onAppendSwap, onRemoveSwap, onPatchSwap, onPatchProduct, onReorderSwapsLocal, onEditMethods, onImageModal }) {
+export default function SwapStats({ swaps, products, methods, onUpdate, onReloadSwap, onReloadProduct, onAppendSwap, onRemoveSwap, onPatchSwap, onPatchProduct, onReorderSwapsLocal, onEditMethods, onImageModal, showAddSwap, onCloseAddSwap }) {
   const { message } = App.useApp();
   const [groupBy, setGroupBy] = useState(null);
   const [registerSwap, setRegisterSwap] = useState(null);
@@ -45,6 +45,14 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
       return !v;
     });
   };
+
+  // When top-right add button triggers, open RegisterItemsModal in add mode
+  useEffect(() => {
+    if (showAddSwap) {
+      handleAddRow();
+      onCloseAddSwap();
+    }
+  }, [showAddSwap]);
 
   // Optimistic: patch local state, then fire-and-forget the network call. On error, refetch.
   const handleUpdate = (id, field, value) => {
@@ -155,6 +163,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
         </span>
       ),
       dataIndex: 'swap_method_id', width: 160,
+      defaultSortOrder: 'ascend',
       sorter: (a, b) => {
         const ai = methods.findIndex(m => m.id === a.swap_method_id);
         const bi = methods.findIndex(m => m.id === b.swap_method_id);

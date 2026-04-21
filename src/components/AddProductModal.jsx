@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Modal, Form, Input, InputNumber } from 'antd';
+import { useState, useEffect } from 'react';
+import { Modal, Form, Input, InputNumber, Select } from 'antd';
 import { api } from '../api';
 import ImageUploadZone from './ImageUploadZone';
 
@@ -7,6 +7,15 @@ export default function AddProductModal({ onClose, onCreated }) {
   const [form] = Form.useForm();
   const [images, setImages] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [types, setTypes] = useState([]);
+  const [characters, setCharacters] = useState([]);
+
+  useEffect(() => {
+    Promise.all([api.getProductTypes(), api.getCharacters()]).then(([t, c]) => {
+      setTypes(t);
+      setCharacters(c);
+    });
+  }, []);
 
   const handleSubmit = async () => {
     let values;
@@ -17,6 +26,8 @@ export default function AddProductModal({ onClose, onCreated }) {
         name: values.name.trim(),
         total: values.total,
         notes: values.notes || '',
+        type_id: values.type_id || null,
+        character_id: values.character_id || null,
       });
       for (const img of images) {
         await api.uploadProductImage(product.id, img);
@@ -47,6 +58,14 @@ export default function AddProductModal({ onClose, onCreated }) {
         <Form.Item label="总数" name="total" rules={[{ required: true, message: '请输入总数' }]}>
           <InputNumber min={0} style={{ width: 200 }} placeholder="输入数量" />
         </Form.Item>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Form.Item label="制品类型" name="type_id" style={{ flex: 1 }}>
+            <Select allowClear placeholder="选择类型" options={types.map(t => ({ value: t.id, label: t.name }))} />
+          </Form.Item>
+          <Form.Item label="制品角色" name="character_id" style={{ flex: 1 }}>
+            <Select allowClear placeholder="选择角色" options={characters.map(c => ({ value: c.id, label: c.name }))} />
+          </Form.Item>
+        </div>
         <Form.Item label="制品图片">
           <ImageUploadZone images={images} onChange={setImages} />
         </Form.Item>

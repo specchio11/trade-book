@@ -5,7 +5,7 @@ import { api } from './api';
 import ProductStats from './pages/ProductStats';
 import SwapStats from './pages/SwapStats';
 import AddProductModal from './components/AddProductModal';
-import AddSwapModal from './components/AddSwapModal';
+
 import ImagePreviewModal from './components/ImagePreviewModal';
 import EditMethodsModal from './components/EditMethodsModal';
 import UserSwitcher from './components/UserSwitcher';
@@ -155,6 +155,8 @@ export default function App() {
             onReorderSwapsLocal={reorderSwapsLocal}
             onEditMethods={() => setShowEditMethods(true)}
             onImageModal={setImageModal}
+            showAddSwap={showAddSwap}
+            onCloseAddSwap={() => setShowAddSwap(false)}
           />
         )}
       </div>
@@ -162,9 +164,7 @@ export default function App() {
       {showAddProduct && (
         <AddProductModal onClose={() => setShowAddProduct(false)} onCreated={loadProducts} />
       )}
-      {showAddSwap && (
-        <AddSwapModal products={products} methods={methods} onClose={() => setShowAddSwap(false)} onCreated={reloadAfterSwapChange} />
-      )}
+
       {showEditMethods && (
         <EditMethodsModal methods={methods} onClose={() => setShowEditMethods(false)} onSaved={loadMethods} />
       )}
