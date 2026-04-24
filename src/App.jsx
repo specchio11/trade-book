@@ -10,12 +10,15 @@ import AddProductModal from './components/AddProductModal';
 import ImagePreviewModal from './components/ImagePreviewModal';
 import EditMethodsModal from './components/EditMethodsModal';
 import UserSwitcher from './components/UserSwitcher';
+import useIsMobile from './hooks/useIsMobile';
+import MobileProductList from './components/MobileProductList';
+import MobileSwapList from './components/MobileSwapList';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [tab, setTab] = useState('swaps');
-  const [products, setProducts] = useState([]);
+  const isMobile = useIsMobile();  const [products, setProducts] = useState([]);
   const [swaps, setSwaps] = useState([]);
   const [methods, setMethods] = useState([]);
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -142,8 +145,8 @@ export default function App() {
       <header className="top-bar">
         <Typography.Title level={3} style={{ margin: 0 }}>Trade Book</Typography.Title>
         <Space>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAddProduct(true)}>添加制品</Button>
-          <Button type="primary" style={{ background: '#16a34a', borderColor: '#16a34a' }} icon={<PlusOutlined />} onClick={() => setShowAddSwap(true)}>添加互换</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAddProduct(true)}>{isMobile ? '制品' : '添加制品'}</Button>
+          <Button type="primary" style={{ background: '#16a34a', borderColor: '#16a34a' }} icon={<PlusOutlined />} onClick={() => setShowAddSwap(true)}>{isMobile ? '互换' : '添加互换'}</Button>
           <UserSwitcher currentUser={currentUser} onUserChange={loadData} onLogout={handleLogout} />
         </Space>
       </header>
@@ -159,40 +162,71 @@ export default function App() {
         style={{ padding: '0 24px' }}
       />
 
-      <div style={{ padding: '0 24px 24px' }}>
+      <div style={{ padding: isMobile ? '0 12px 24px' : '0 24px 24px' }}>
         {tab === 'products' ? (
-          <ProductStats
-            products={products}
-            onUpdate={loadProducts}
-            onReloadProduct={reloadProduct}
-            onAppendProduct={appendProduct}
-            onRemoveProduct={removeProductLocal}
-            onPatchProduct={patchProduct}
-            onReorderProductsLocal={reorderProductsLocal}
-            onImageModal={setImageModal}
-          />
+          isMobile ? (
+            <MobileProductList
+              products={products}
+              onUpdate={loadProducts}
+              onReloadProduct={reloadProduct}
+              onAppendProduct={appendProduct}
+              onRemoveProduct={removeProductLocal}
+              onImageModal={setImageModal}
+              showAddProduct={showAddProduct}
+              onCloseAddProduct={() => setShowAddProduct(false)}
+            />
+          ) : (
+            <ProductStats
+              products={products}
+              onUpdate={loadProducts}
+              onReloadProduct={reloadProduct}
+              onAppendProduct={appendProduct}
+              onRemoveProduct={removeProductLocal}
+              onPatchProduct={patchProduct}
+              onReorderProductsLocal={reorderProductsLocal}
+              onImageModal={setImageModal}
+            />
+          )
         ) : (
-          <SwapStats
-            swaps={swaps}
-            products={products}
-            methods={methods}
-            onUpdate={reloadAfterSwapChange}
-            onReloadSwap={reloadSwap}
-            onReloadProduct={reloadProduct}
-            onAppendSwap={appendSwap}
-            onRemoveSwap={removeSwapLocal}
-            onPatchSwap={patchSwap}
-            onPatchProduct={patchProduct}
-            onReorderSwapsLocal={reorderSwapsLocal}
-            onEditMethods={() => setShowEditMethods(true)}
-            onImageModal={setImageModal}
-            showAddSwap={showAddSwap}
-            onCloseAddSwap={() => setShowAddSwap(false)}
-          />
+          isMobile ? (
+            <MobileSwapList
+              swaps={swaps}
+              products={products}
+              methods={methods}
+              onUpdate={reloadAfterSwapChange}
+              onReloadSwap={reloadSwap}
+              onReloadProduct={reloadProduct}
+              onAppendSwap={appendSwap}
+              onRemoveSwap={removeSwapLocal}
+              onPatchSwap={patchSwap}
+              onImageModal={setImageModal}
+              onEditMethods={() => setShowEditMethods(true)}
+              showAddSwap={showAddSwap}
+              onCloseAddSwap={() => setShowAddSwap(false)}
+            />
+          ) : (
+            <SwapStats
+              swaps={swaps}
+              products={products}
+              methods={methods}
+              onUpdate={reloadAfterSwapChange}
+              onReloadSwap={reloadSwap}
+              onReloadProduct={reloadProduct}
+              onAppendSwap={appendSwap}
+              onRemoveSwap={removeSwapLocal}
+              onPatchSwap={patchSwap}
+              onPatchProduct={patchProduct}
+              onReorderSwapsLocal={reorderSwapsLocal}
+              onEditMethods={() => setShowEditMethods(true)}
+              onImageModal={setImageModal}
+              showAddSwap={showAddSwap}
+              onCloseAddSwap={() => setShowAddSwap(false)}
+            />
+          )
         )}
       </div>
 
-      {showAddProduct && (
+      {showAddProduct && !isMobile && (
         <AddProductModal onClose={() => setShowAddProduct(false)} onCreated={loadProducts} />
       )}
 
