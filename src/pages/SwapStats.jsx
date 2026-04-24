@@ -354,7 +354,11 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
 
       <SortableTable
         columns={columns}
-        dataSource={swaps}
+        dataSource={[...swaps].sort((a, b) => {
+          const ai = methods.findIndex(m => m.id === a.swap_method_id);
+          const bi = methods.findIndex(m => m.id === b.swap_method_id);
+          return (ai < 0 ? Infinity : ai) - (bi < 0 ? Infinity : bi);
+        })}
         onReorder={handleReorder}
         groupBy={groupBy}
         getGroupLabel={getGroupLabel}
