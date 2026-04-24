@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Modal, Button, Upload, Image, Popconfirm, Space, Typography, App as AntdApp } from 'antd';
+import { Button, Upload, Image, Popconfirm, Space, Typography, App as AntdApp } from 'antd';
 import { UploadOutlined, DeleteOutlined, StarOutlined, InboxOutlined } from '@ant-design/icons';
 import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
+import MobileOrModal from './MobilePageShell';
 
 const { Dragger } = Upload;
 
@@ -132,7 +133,7 @@ export default function ImagePreviewModal({ type, targetId, targetName, images: 
   const hasImages = images.length > 0;
 
   return (
-    <Modal
+    <MobileOrModal
       open
       title={
         <div>
@@ -209,6 +210,6 @@ export default function ImagePreviewModal({ type, targetId, targetName, images: 
       <Typography.Paragraph type="secondary" style={{ marginTop: 12, marginBottom: 0, fontSize: 12 }}>
         💡 可以直接 Ctrl+V 粘贴剪贴板中的图片
       </Typography.Paragraph>
-    </Modal>
+    </MobileOrModal>
   );
 }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Modal, Form, Input, InputNumber, App } from 'antd';
+import { Form, Input, InputNumber, App } from 'antd';
 import { api } from '../api';
 import CreatableSelect from './CreatableSelect';
+import MobileOrModal from './MobilePageShell';
 
 // Mobile-friendly full edit modal for an existing product. Cover image management
 // stays on the existing ImagePreviewModal (tap the cover thumb to open it).
@@ -41,7 +42,7 @@ export default function EditProductModal({ product, onClose, onSaved }) {
   };
 
   return (
-    <Modal
+    <MobileOrModal
       open
       title={`编辑制品 — ${product.name}`}
       onCancel={onClose}
@@ -106,6 +107,6 @@ export default function EditProductModal({ product, onClose, onSaved }) {
           <Input placeholder="选填" />
         </Form.Item>
       </Form>
-    </Modal>
+    </MobileOrModal>
   );
 }

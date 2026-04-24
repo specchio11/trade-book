@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { Modal, InputNumber, Tag, Typography, Empty, Form, Input, Radio, Divider, Upload, Spin, Button, App } from 'antd';
+import { InputNumber, Tag, Typography, Empty, Form, Input, Radio, Divider, Upload, Spin, Button, App } from 'antd';
 import { PictureOutlined, InboxOutlined, DeleteOutlined } from '@ant-design/icons';
 import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
+import MobileOrModal from './MobilePageShell';
 
 const { Dragger } = Upload;
 
@@ -255,7 +256,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
   };
 
   return (
-    <Modal
+    <MobileOrModal
       open
       title={swap.nickname ? `编辑互换 — ${swap.nickname}` : '添加互换'}
       onCancel={handleClose}
@@ -419,6 +420,6 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
           ))
         )}
       </Form>
-    </Modal>
+    </MobileOrModal>
   );
 }
