@@ -86,10 +86,10 @@ body {
 
 /* Swap row highlight when 已互换 */
 .row-swapped > td {
-  background: #f0fdf4 !important;
+  background: #fdfde6 !important;
 }
 .row-swapped:hover > td {
-  background: #dcfce7 !important;
+  background: #f7f5d1 !important;
 }
 
 /* Remove sorted column highlight (cells + header) */
@@ -596,8 +596,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 }
 .mobile-card-muted { opacity: 0.6; }
 .mobile-card-swapped {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
+  background: #fdfde6;
+  border-color: #f0e9a8;
 }
 .mobile-card-thumb {
   flex-shrink: 0;
