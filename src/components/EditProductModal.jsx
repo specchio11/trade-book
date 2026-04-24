@@ -1,17 +1,66 @@
-import { useState, useEffect } from 'react';
-import { Form, Input, InputNumber, App } from 'antd';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Form, Input, InputNumber, App, Spin, Typography, Divider, Upload } from 'antd';
+import { InboxOutlined, DeleteOutlined } from '@ant-design/icons';
+import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
+import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { api } from '../api';
 import CreatableSelect from './CreatableSelect';
 import MobileOrModal from './MobilePageShell';
 
-// Mobile-friendly full edit modal for an existing product. Cover image management
-// stays on the existing ImagePreviewModal (tap the cover thumb to open it).
+const { Dragger } = Upload;
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+function SortableThumb({ img, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: img.id });
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    position: 'relative',
+    width: 72, height: 72, borderRadius: 6,
+    overflow: 'hidden', cursor: 'grab',
+    border: '1px solid #eee',
+    opacity: isDragging ? 0.5 : 1,
+    flexShrink: 0,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <img src={img.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onDelete(img.id); }}
+        style={{
+          position: 'absolute', top: 2, right: 2, border: 'none',
+          background: 'rgba(0,0,0,.6)', color: '#fff', borderRadius: '50%',
+          width: 22, height: 22, cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', padding: 0,
+        }}
+        title="删除"
+      >
+        <DeleteOutlined style={{ fontSize: 12 }} />
+      </button>
+    </div>
+  );
+}
+
+// Mobile-friendly full edit modal for an existing product, including image management.
 export default function EditProductModal({ product, onClose, onSaved }) {
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [types, setTypes] = useState([]);
   const [characters, setCharacters] = useState([]);
+  const [images, setImages] = useState([]);
+  const [loadingImages, setLoadingImages] = useState(true);
+  const imagesDirtyRef = useRef(false);
 
   useEffect(() => {
     Promise.all([api.getProductTypes(), api.getCharacters()]).then(([t, c]) => {
@@ -19,6 +68,74 @@ export default function EditProductModal({ product, onClose, onSaved }) {
       setCharacters(c);
     });
   }, []);
+
+  const reloadImages = useCallback(async () => {
+    const imgs = await api.getProductImages(product.id);
+    setImages(imgs);
+    return imgs;
+  }, [product.id]);
+
+  useEffect(() => {
+    let alive = true;
+    setLoadingImages(true);
+    api.getProductImages(product.id).then(imgs => {
+      if (alive) {
+        setImages(imgs);
+        setLoadingImages(false);
+      }
+    });
+    return () => { alive = false; };
+  }, [product.id]);
+
+  const processFiles = useCallback(async (files) => {
+    const list = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (list.length === 0) return;
+    for (const file of list) {
+      const data = await readFileAsDataURL(file);
+      await api.uploadProductImage(product.id, data);
+    }
+    imagesDirtyRef.current = true;
+    await reloadImages();
+  }, [product.id, reloadImages]);
+
+  useEffect(() => {
+    const handlePaste = (e) => {
+      const ae = document.activeElement;
+      if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+      const items = Array.from(e.clipboardData?.items || []);
+      const files = items.filter(i => i.type.startsWith('image/')).map(i => i.getAsFile()).filter(Boolean);
+      if (files.length > 0) {
+        e.preventDefault();
+        processFiles(files);
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [processFiles]);
+
+  const handleDeleteImage = async (id) => {
+    await api.deleteProductImage(product.id, id);
+    imagesDirtyRef.current = true;
+    await reloadImages();
+  };
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const oldI = images.findIndex(i => i.id === active.id);
+    const newI = images.findIndex(i => i.id === over.id);
+    if (oldI < 0 || newI < 0) return;
+    const next = arrayMove(images, oldI, newI);
+    setImages(next);
+    imagesDirtyRef.current = true;
+    await api.reorderProductImages(product.id, next.map(i => i.id));
+  };
+
+  const handleClose = () => {
+    if (imagesDirtyRef.current) onSaved?.(product.id);
+    onClose();
+  };
 
   const handleSubmit = async () => {
     let values;
@@ -45,7 +162,7 @@ export default function EditProductModal({ product, onClose, onSaved }) {
     <MobileOrModal
       open
       title={`编辑制品 — ${product.name}`}
-      onCancel={onClose}
+      onCancel={handleClose}
       onOk={handleSubmit}
       okText="保存"
       cancelText="取消"
@@ -106,6 +223,41 @@ export default function EditProductModal({ product, onClose, onSaved }) {
         <Form.Item label="备注" name="notes">
           <Input placeholder="选填" />
         </Form.Item>
+
+        <Typography.Text strong style={{ fontSize: 14 }}>制品图片</Typography.Text>
+        <Divider style={{ margin: '8px 0 12px' }} />
+        {loadingImages ? (
+          <Spin size="small" />
+        ) : (
+          <>
+            <Dragger
+              multiple
+              accept="image/*"
+              showUploadList={false}
+              beforeUpload={(file, list) => { processFiles(list); return false; }}
+              style={{ padding: 8 }}
+            >
+              <p className="ant-upload-drag-icon" style={{ marginBottom: 4 }}><InboxOutlined /></p>
+              <p className="ant-upload-text" style={{ fontSize: 13 }}>点击、拖拽或 Ctrl+V 粘贴图片</p>
+            </Dragger>
+            {images.length > 0 && (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={images.map(i => i.id)} strategy={horizontalListSortingStrategy}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                    {images.map(img => (
+                      <SortableThumb key={img.id} img={img} onDelete={handleDeleteImage} />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            )}
+            {images.length > 0 && (
+              <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 6 }}>
+                💡 拖拽缩略图可调整顺序，第一张为封面
+              </Typography.Text>
+            )}
+          </>
+        )}
       </Form>
     </MobileOrModal>
   );
