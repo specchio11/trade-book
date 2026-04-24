@@ -668,8 +668,19 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   justify-content: flex-start;
 }
 
-/* Mobile fullscreen page (used in place of Modal on phones) */
-.mobile-page {
+/* Sticky tabs below the top-bar */
+.app-tabs {
+  position: sticky;
+  top: 60px;
+  z-index: 99;
+  background: #fff;
+  margin-bottom: 0;
+}
+@media (max-width: 768px) {
+  .app-tabs { top: 56px; }
+}
+
+/* Mobile fullscreen page (used in place of Modal on phones) */.mobile-page {
   position: fixed;
   inset: 0;
   background: #f5f5f7;

@@ -145,8 +145,8 @@ export default function App() {
       <header className="top-bar">
         {!isMobile && <Typography.Title level={3} style={{ margin: 0 }}>Trade Book</Typography.Title>}
         <Space wrap={false} size={isMobile ? 6 : 8} style={isMobile ? { width: '100%', justifyContent: 'space-between' } : undefined}>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAddProduct(true)}>{isMobile ? '制品' : '添加制品'}</Button>
-          <Button type="primary" style={{ background: '#16a34a', borderColor: '#16a34a' }} icon={<PlusOutlined />} onClick={() => setShowAddSwap(true)}>{isMobile ? '互换' : '添加互换'}</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { setTab('products'); setShowAddProduct(true); }}>{isMobile ? '制品' : '添加制品'}</Button>
+          <Button type="primary" style={{ background: '#16a34a', borderColor: '#16a34a' }} icon={<PlusOutlined />} onClick={() => { setTab('swaps'); setShowAddSwap(true); }}>{isMobile ? '互换' : '添加互换'}</Button>
           <UserSwitcher currentUser={currentUser} onUserChange={loadData} onLogout={handleLogout} />
         </Space>
       </header>
@@ -162,6 +162,7 @@ export default function App() {
         tabBarExtraContent={isMobile && tab === 'swaps' ? (
           <Button size="small" icon={<SettingOutlined />} onClick={() => setShowEditMethods(true)}>互换方式</Button>
         ) : null}
+        className="app-tabs"
         style={{ padding: isMobile ? '0 12px' : '0 24px' }}
       />
 
