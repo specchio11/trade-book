@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Form, Input, InputNumber, App, Spin, Typography, Divider, Upload } from 'antd';
+import { Form, Input, InputNumber, App, Spin, Typography, Divider, Upload, Image } from 'antd';
 import { InboxOutlined, DeleteOutlined } from '@ant-design/icons';
 import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
@@ -32,7 +32,15 @@ function SortableThumb({ img, onDelete }) {
   };
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <img src={img.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+      <Image
+        src={img.data}
+        alt=""
+        width="100%"
+        height="100%"
+        rootClassName="thumb-image"
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        preview={{ mask: false }}
+      />
       <button
         type="button"
         onPointerDown={(e) => e.stopPropagation()}
@@ -276,11 +284,13 @@ export default function EditProductModal({ product, onClose, onSaved, onCreated 
             {images.length > 0 && (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={images.map(i => i.id)} strategy={horizontalListSortingStrategy}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                    {images.map(img => (
-                      <SortableThumb key={img.id} img={img} onDelete={handleDeleteImage} />
-                    ))}
-                  </div>
+                  <Image.PreviewGroup>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                      {images.map(img => (
+                        <SortableThumb key={img.id} img={img} onDelete={handleDeleteImage} />
+                      ))}
+                    </div>
+                  </Image.PreviewGroup>
                 </SortableContext>
               </DndContext>
             )}
