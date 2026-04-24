@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Form, Input, InputNumber, App, Spin, Typography, Divider, Upload, Image } from 'antd';
-import { InboxOutlined, DeleteOutlined } from '@ant-design/icons';
+import { InboxOutlined, DeleteOutlined, HolderOutlined } from '@ant-design/icons';
 import { DndContext, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -25,13 +25,13 @@ function SortableThumb({ img, onDelete }) {
     transition,
     position: 'relative',
     width: 72, height: 72, borderRadius: 6,
-    overflow: 'hidden', cursor: 'grab',
+    overflow: 'hidden',
     border: '1px solid #eee',
     opacity: isDragging ? 0.5 : 1,
     flexShrink: 0,
   };
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style}>
       <Image
         src={img.data}
         alt=""
@@ -41,6 +41,14 @@ function SortableThumb({ img, onDelete }) {
         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         preview={{ mask: false }}
       />
+      <span
+        {...attributes}
+        {...listeners}
+        className="thumb-drag-handle"
+        title="拖动排序"
+      >
+        <HolderOutlined />
+      </span>
       <button
         type="button"
         onPointerDown={(e) => e.stopPropagation()}
@@ -50,6 +58,7 @@ function SortableThumb({ img, onDelete }) {
           background: 'rgba(0,0,0,.6)', color: '#fff', borderRadius: '50%',
           width: 22, height: 22, cursor: 'pointer', display: 'flex',
           alignItems: 'center', justifyContent: 'center', padding: 0,
+          zIndex: 2,
         }}
         title="删除"
       >

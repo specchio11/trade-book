@@ -691,6 +691,26 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
 }
 .thumb-image .ant-image { cursor: pointer; }
 
+/* Small drag handle on thumbnails (lets the rest of the image stay clickable for preview) */
+.thumb-drag-handle {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  font-size: 12px;
+  z-index: 2;
+  touch-action: none;
+}
+.thumb-drag-handle:active { cursor: grabbing; }
+
 /* Mobile fullscreen page (used in place of Modal on phones) */
 .mobile-page {
   position: fixed;
