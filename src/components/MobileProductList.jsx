@@ -10,14 +10,9 @@ export default function MobileProductList({
   const { message } = App.useApp();
   const [editing, setEditing] = useState(null);
 
-  const handleAdd = async () => {
-    const created = await api.createProduct({ name: '新制品', total: 0, notes: '' });
-    onAppendProduct(created.id);
-    // open edit modal immediately for filling in details
-    try {
-      const full = await api.getProduct(created.id);
-      setEditing(full);
-    } catch { /* ignore */ }
+  const handleAdd = () => {
+    // Open edit page with empty staged product; persist only on save.
+    setEditing({ name: '', total: 0, notes: '' });
   };
 
   // Trigger from top-bar add button
@@ -114,6 +109,7 @@ export default function MobileProductList({
           product={editing}
           onClose={() => setEditing(null)}
           onSaved={(id) => onReloadProduct(id)}
+          onCreated={(id) => onAppendProduct(id)}
         />
       )}
     </div>

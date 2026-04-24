@@ -51,16 +51,20 @@ function SortableThumb({ img, onDelete }) {
   );
 }
 
-// Mobile-friendly full edit modal for an existing product, including image management.
-export default function EditProductModal({ product, onClose, onSaved }) {
+// Mobile-friendly full edit page for a product. Supports both editing (product has id)
+// and creating new (product is null/has no id — staged locally until user saves).
+export default function EditProductModal({ product, onClose, onSaved, onCreated }) {
+  const isNew = !product?.id;
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [types, setTypes] = useState([]);
   const [characters, setCharacters] = useState([]);
+  // For existing: server-backed images. For new: staged { id: 'tmp-N', data: dataUrl }.
   const [images, setImages] = useState([]);
-  const [loadingImages, setLoadingImages] = useState(true);
+  const [loadingImages, setLoadingImages] = useState(!isNew);
   const imagesDirtyRef = useRef(false);
+  const tmpIdRef = useRef(0);
 
   useEffect(() => {
     Promise.all([api.getProductTypes(), api.getCharacters()]).then(([t, c]) => {
@@ -70,12 +74,14 @@ export default function EditProductModal({ product, onClose, onSaved }) {
   }, []);
 
   const reloadImages = useCallback(async () => {
+    if (isNew) return images;
     const imgs = await api.getProductImages(product.id);
     setImages(imgs);
     return imgs;
-  }, [product.id]);
+  }, [product?.id, isNew, images]);
 
   useEffect(() => {
+    if (isNew) return;
     let alive = true;
     setLoadingImages(true);
     api.getProductImages(product.id).then(imgs => {
@@ -85,18 +91,26 @@ export default function EditProductModal({ product, onClose, onSaved }) {
       }
     });
     return () => { alive = false; };
-  }, [product.id]);
+  }, [product?.id, isNew]);
 
   const processFiles = useCallback(async (files) => {
     const list = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (list.length === 0) return;
+    if (isNew) {
+      const dataUrls = await Promise.all(list.map(f => readFileAsDataURL(f)));
+      setImages(prev => [
+        ...prev,
+        ...dataUrls.map(d => ({ id: `tmp-${++tmpIdRef.current}`, data: d })),
+      ]);
+      return;
+    }
     for (const file of list) {
       const data = await readFileAsDataURL(file);
       await api.uploadProductImage(product.id, data);
     }
     imagesDirtyRef.current = true;
     await reloadImages();
-  }, [product.id, reloadImages]);
+  }, [product?.id, isNew, reloadImages]);
 
   useEffect(() => {
     const handlePaste = (e) => {
@@ -114,6 +128,10 @@ export default function EditProductModal({ product, onClose, onSaved }) {
   }, [processFiles]);
 
   const handleDeleteImage = async (id) => {
+    if (isNew) {
+      setImages(prev => prev.filter(i => i.id !== id));
+      return;
+    }
     await api.deleteProductImage(product.id, id);
     imagesDirtyRef.current = true;
     await reloadImages();
@@ -128,12 +146,13 @@ export default function EditProductModal({ product, onClose, onSaved }) {
     if (oldI < 0 || newI < 0) return;
     const next = arrayMove(images, oldI, newI);
     setImages(next);
+    if (isNew) return;
     imagesDirtyRef.current = true;
     await api.reorderProductImages(product.id, next.map(i => i.id));
   };
 
   const handleClose = () => {
-    if (imagesDirtyRef.current) onSaved?.(product.id);
+    if (!isNew && imagesDirtyRef.current) onSaved?.(product.id);
     onClose();
   };
 
@@ -142,14 +161,28 @@ export default function EditProductModal({ product, onClose, onSaved }) {
     try { values = await form.validateFields(); } catch { return; }
     setSubmitting(true);
     try {
-      await api.updateProduct(product.id, {
-        name: (values.name || '').trim(),
-        total: values.total,
-        notes: values.notes || '',
-        type_id: values.type_id || null,
-        character_id: values.character_id || null,
-      });
-      onSaved?.(product.id);
+      if (isNew) {
+        const created = await api.createProduct({
+          name: (values.name || '').trim(),
+          total: values.total || 0,
+          notes: values.notes || '',
+          type_id: values.type_id || null,
+          character_id: values.character_id || null,
+        });
+        for (const img of images) {
+          await api.uploadProductImage(created.id, img.data);
+        }
+        onCreated?.(created.id);
+      } else {
+        await api.updateProduct(product.id, {
+          name: (values.name || '').trim(),
+          total: values.total,
+          notes: values.notes || '',
+          type_id: values.type_id || null,
+          character_id: values.character_id || null,
+        });
+        onSaved?.(product.id);
+      }
       onClose();
     } catch {
       message.error('保存失败');
@@ -161,10 +194,10 @@ export default function EditProductModal({ product, onClose, onSaved }) {
   return (
     <MobileOrModal
       open
-      title={`编辑制品 — ${product.name}`}
+      title={isNew ? '添加制品' : `编辑制品 — ${product.name}`}
       onCancel={handleClose}
       onOk={handleSubmit}
-      okText="保存"
+      okText={isNew ? '添加' : '保存'}
       cancelText="取消"
       confirmLoading={submitting}
       maskClosable={false}
@@ -175,11 +208,11 @@ export default function EditProductModal({ product, onClose, onSaved }) {
         form={form}
         layout="vertical"
         initialValues={{
-          name: product.name || '',
-          total: product.total || 0,
-          notes: product.notes || '',
-          type_id: product.type_id || undefined,
-          character_id: product.character_id || undefined,
+          name: product?.name || '',
+          total: product?.total ?? 0,
+          notes: product?.notes || '',
+          type_id: product?.type_id || undefined,
+          character_id: product?.character_id || undefined,
         }}
       >
         <Form.Item label="制品名称" name="name" rules={[{ required: true, message: '请输入名称' }]}>
@@ -189,12 +222,16 @@ export default function EditProductModal({ product, onClose, onSaved }) {
           <Form.Item label="总数" name="total" rules={[{ required: true, message: '请输入总数' }]} style={{ flex: 1, minWidth: 120 }}>
             <InputNumber min={0} style={{ width: '100%' }} placeholder="总数" />
           </Form.Item>
-          <Form.Item label="已兑换" style={{ flex: 1, minWidth: 120 }}>
-            <InputNumber value={product.exchanged || 0} disabled style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item label="剩余" style={{ flex: 1, minWidth: 120 }}>
-            <InputNumber value={product.remaining ?? 0} disabled style={{ width: '100%' }} />
-          </Form.Item>
+          {!isNew && (
+            <>
+              <Form.Item label="已兑换" style={{ flex: 1, minWidth: 120 }}>
+                <InputNumber value={product.exchanged || 0} disabled style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item label="剩余" style={{ flex: 1, minWidth: 120 }}>
+                <InputNumber value={product.remaining ?? 0} disabled style={{ width: '100%' }} />
+              </Form.Item>
+            </>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Form.Item label="制品类型" name="type_id" style={{ flex: 1, minWidth: 160 }}>
