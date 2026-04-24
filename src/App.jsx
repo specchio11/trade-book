@@ -143,8 +143,8 @@ export default function App() {
   return (
     <div className="app">
       <header className="top-bar">
-        <Typography.Title level={3} style={{ margin: 0 }}>Trade Book</Typography.Title>
-        <Space>
+        {!isMobile && <Typography.Title level={3} style={{ margin: 0 }}>Trade Book</Typography.Title>}
+        <Space wrap={false} size={isMobile ? 6 : 8} style={isMobile ? { width: '100%', justifyContent: 'space-between' } : undefined}>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAddProduct(true)}>{isMobile ? '制品' : '添加制品'}</Button>
           <Button type="primary" style={{ background: '#16a34a', borderColor: '#16a34a' }} icon={<PlusOutlined />} onClick={() => setShowAddSwap(true)}>{isMobile ? '互换' : '添加互换'}</Button>
           <UserSwitcher currentUser={currentUser} onUserChange={loadData} onLogout={handleLogout} />
@@ -159,7 +159,7 @@ export default function App() {
           { key: 'products', label: '制品统计' },
           { key: 'swaps', label: '互换统计' },
         ]}
-        style={{ padding: '0 24px' }}
+        style={{ padding: isMobile ? '0 12px' : '0 24px' }}
       />
 
       <div style={{ padding: isMobile ? '0 12px 24px' : '0 24px 24px' }}>
