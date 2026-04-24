@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, Button, Space, Typography } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, SettingOutlined } from '@ant-design/icons';
 import { api, getAuthToken, setAuthToken, setOnAuthError } from './api';
 import ProductStats from './pages/ProductStats';
 import SwapStats from './pages/SwapStats';
@@ -159,6 +159,9 @@ export default function App() {
           { key: 'products', label: '制品统计' },
           { key: 'swaps', label: '互换统计' },
         ]}
+        tabBarExtraContent={isMobile && tab === 'swaps' ? (
+          <Button size="small" icon={<SettingOutlined />} onClick={() => setShowEditMethods(true)}>互换方式</Button>
+        ) : null}
         style={{ padding: isMobile ? '0 12px' : '0 24px' }}
       />
 

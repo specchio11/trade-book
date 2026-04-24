@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Tag, Popconfirm, App, Empty, Checkbox } from 'antd';
-import { DeleteOutlined, PlusOutlined, PictureOutlined, AppstoreAddOutlined, SettingOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, PictureOutlined, AppstoreAddOutlined } from '@ant-design/icons';
 import { api } from '../api';
 import RegisterItemsModal from './RegisterItemsModal';
 
@@ -81,9 +81,6 @@ export default function MobileSwapList({
 
   return (
     <div className="mobile-card-list">
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-        <Button size="small" icon={<SettingOutlined />} onClick={onEditMethods}>互换方式</Button>
-      </div>
       {sorted.length === 0 ? (
         <Empty description="暂无互换" style={{ marginTop: 40 }} />
       ) : (
