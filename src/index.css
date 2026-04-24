@@ -84,6 +84,14 @@ body {
   opacity: 0.65;
 }
 
+/* Swap row highlight when 已互换 */
+.row-swapped > td {
+  background: #f0fdf4 !important;
+}
+.row-swapped:hover > td {
+  background: #dcfce7 !important;
+}
+
 /* Remove sorted column highlight (cells + header) */
 td.ant-table-column-sort {
   background: inherit !important;
@@ -587,6 +595,10 @@ body { font-family: var(--font); background: var(--bg); color: var(--text); min-
   box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
 }
 .mobile-card-muted { opacity: 0.6; }
+.mobile-card-swapped {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
 .mobile-card-thumb {
   flex-shrink: 0;
   width: 64px;

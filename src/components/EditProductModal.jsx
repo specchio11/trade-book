@@ -219,15 +219,15 @@ export default function EditProductModal({ product, onClose, onSaved, onCreated 
           <Input placeholder="输入制品名称" />
         </Form.Item>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <Form.Item label="总数" name="total" rules={[{ required: true, message: '请输入总数' }]} style={{ flex: 1, minWidth: 120 }}>
+          <Form.Item label="总数" name="total" rules={[{ required: true, message: '请输入总数' }]} style={{ flex: 1, minWidth: 80 }}>
             <InputNumber min={0} style={{ width: '100%' }} placeholder="总数" />
           </Form.Item>
           {!isNew && (
             <>
-              <Form.Item label="已兑换" style={{ flex: 1, minWidth: 120 }}>
+              <Form.Item label="已兑换" style={{ flex: 1, minWidth: 80 }}>
                 <InputNumber value={product.exchanged || 0} disabled style={{ width: '100%' }} />
               </Form.Item>
-              <Form.Item label="剩余" style={{ flex: 1, minWidth: 120 }}>
+              <Form.Item label="剩余" style={{ flex: 1, minWidth: 80 }}>
                 <InputNumber value={product.remaining ?? 0} disabled style={{ width: '100%' }} />
               </Form.Item>
             </>
@@ -257,10 +257,6 @@ export default function EditProductModal({ product, onClose, onSaved, onCreated 
             />
           </Form.Item>
         </div>
-        <Form.Item label="备注" name="notes">
-          <Input placeholder="选填" />
-        </Form.Item>
-
         <Typography.Text strong style={{ fontSize: 14 }}>制品图片</Typography.Text>
         <Divider style={{ margin: '8px 0 12px' }} />
         {loadingImages ? (
@@ -295,6 +291,10 @@ export default function EditProductModal({ product, onClose, onSaved, onCreated 
             )}
           </>
         )}
+
+        <Form.Item label="备注" name="notes" style={{ marginTop: 16 }}>
+          <Input placeholder="选填" />
+        </Form.Item>
       </Form>
     </MobileOrModal>
   );

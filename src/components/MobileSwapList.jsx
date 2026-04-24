@@ -89,7 +89,7 @@ export default function MobileSwapList({
           const totalQty = (s.items || []).reduce((sum, it) => sum + (it.quantity || 0), 0);
           const kinds = (s.items || []).filter(it => it.quantity > 0).length;
           return (
-            <div key={s.id} className="mobile-card" onClick={() => setEditing(s)}>
+            <div key={s.id} className={`mobile-card ${s.is_swapped ? 'mobile-card-swapped' : ''}`} onClick={() => setEditing(s)}>
               <div className="mobile-card-thumb" onClick={(e) => openImages(e, s)}>
                 {s.cover_image
                   ? <img src={s.cover_image.data} alt="" />

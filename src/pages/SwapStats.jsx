@@ -365,6 +365,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
         groupSorter={groupSorter}
         groupFooter={renderGroupFooter}
         storageKey="swaps"
+        rowClassName={(r) => r.is_swapped ? 'row-swapped' : ''}
         pagination={false}
         bordered
         size="middle"
