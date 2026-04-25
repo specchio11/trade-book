@@ -27,13 +27,15 @@ function ColorSwatch({ color, selected, onClick }) {
       onClick={onClick}
       title={color || '默认'}
       style={{
-        width: 22, height: 22, padding: 0, cursor: 'pointer',
+        width: 24, height: 24, padding: 0, cursor: 'pointer',
         borderRadius: '50%',
         border: selected ? '2px solid #1677ff' : '1px solid #d9d9d9',
         background: 'transparent',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        lineHeight: 0,
       }}
     >
-      <Tag color={color || 'default'} style={{ width: 16, height: 16, padding: 0, margin: 0, borderRadius: '50%', display: 'block' }} />
+      <Tag color={color || 'default'} style={{ width: 14, height: 14, padding: 0, margin: 0, borderRadius: '50%', display: 'block', flex: 'none' }} />
     </button>
   );
 }
