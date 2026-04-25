@@ -102,7 +102,7 @@ export const api = {
   // Methods
   getMethods: () => request('/methods'),
   createMethod: (name) => request('/methods', { method: 'POST', body: JSON.stringify({ name }) }),
-  updateMethod: (id, name) => request(`/methods/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) }),
+  updateMethod: (id, data) => request(`/methods/${id}`, { method: 'PATCH', body: JSON.stringify(typeof data === 'string' ? { name: data } : data) }),
   deleteMethod: (id) => request(`/methods/${id}`, { method: 'DELETE' }),
   reorderMethods: (order) => request('/methods/reorder', { method: 'PUT', body: JSON.stringify({ order }) }),
 

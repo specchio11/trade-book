@@ -73,6 +73,8 @@ export async function initDB() {
     ALTER TABLE swaps ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
     ALTER TABLE swaps ADD COLUMN IF NOT EXISTS address TEXT DEFAULT '';
 
+    ALTER TABLE swap_methods ADD COLUMN IF NOT EXISTS color TEXT;
+
     CREATE TABLE IF NOT EXISTS product_types (
       id SERIAL PRIMARY KEY,
       user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,

@@ -417,7 +417,17 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
                         }}
                       >
                         {p.cover_image
-                          ? <img src={p.cover_image.data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ? (
+                            <Image
+                              src={p.cover_image.data}
+                              alt=""
+                              width={40}
+                              height={40}
+                              rootClassName="thumb-image"
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              preview={{ mask: false }}
+                            />
+                          )
                           : <PictureOutlined style={{ fontSize: 18, color: '#bbb' }} />}
                       </div>
                       <span style={{ flex: 1, fontWeight: highlighted || disabled ? 600 : 400, color: disabled ? '#bfbfbf' : highlighted ? '#92400e' : 'inherit' }}>{p.name}</span>

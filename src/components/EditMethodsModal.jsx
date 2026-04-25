@@ -1,14 +1,69 @@
 import { useState } from 'react';
-import { Modal, Button, Input, Tag, Space, Popconfirm, Divider, Typography } from 'antd';
+import { Modal, Button, Input, Tag, Space, Popconfirm, Divider, Typography, Popover } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { api } from '../api';
 
-const chipColor = (name) => {
-  if (name?.includes('音律')) return 'purple';
+// Antd preset Tag colors that look good on white background.
+const COLOR_PRESETS = [
+  { value: '', label: '默认' },
+  { value: 'red' }, { value: 'volcano' }, { value: 'orange' }, { value: 'gold' },
+  { value: 'lime' }, { value: 'green' }, { value: 'cyan' }, { value: 'blue' },
+  { value: 'geekblue' }, { value: 'purple' }, { value: 'magenta' },
+];
+
+const fallbackColor = (name) => {
+  if (!name) return 'default';
+  if (name.includes('音律')) return 'purple';
   if (name === 'ACF') return 'blue';
   if (name === '互寄') return 'green';
   return 'default';
 };
+const effectiveColor = (m) => m?.color || fallbackColor(m?.name);
+
+function ColorSwatch({ color, selected, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={color || '默认'}
+      style={{
+        width: 22, height: 22, padding: 0, cursor: 'pointer',
+        borderRadius: '50%',
+        border: selected ? '2px solid #1677ff' : '1px solid #d9d9d9',
+        background: 'transparent',
+      }}
+    >
+      <Tag color={color || 'default'} style={{ width: 16, height: 16, padding: 0, margin: 0, borderRadius: '50%', display: 'block' }} />
+    </button>
+  );
+}
+
+function ColorPickerPopover({ value, onChange, label }) {
+  const [open, setOpen] = useState(false);
+  const content = (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, width: 200 }}>
+      {COLOR_PRESETS.map(p => (
+        <ColorSwatch
+          key={p.value || 'default'}
+          color={p.value}
+          selected={(value || '') === p.value}
+          onClick={() => { onChange(p.value); setOpen(false); }}
+        />
+      ))}
+    </div>
+  );
+  return (
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      trigger="click"
+      content={content}
+      title="选择颜色"
+    >
+      <Tag color={value || 'default'} style={{ cursor: 'pointer', margin: 0 }}>{label}</Tag>
+    </Popover>
+  );
+}
 
 export default function EditMethodsModal({ methods: initialMethods, onClose, onSaved }) {
   const [methods, setMethods] = useState([...initialMethods]);
@@ -55,8 +110,14 @@ export default function EditMethodsModal({ methods: initialMethods, onClose, onS
 
   const renameMethod = async (id, name) => {
     if (!name.trim()) return;
-    await api.updateMethod(id, name.trim());
+    await api.updateMethod(id, { name: name.trim() });
     await refresh();
+  };
+
+  const setColor = async (id, color) => {
+    setMethods(prev => prev.map(m => m.id === id ? { ...m, color } : m));
+    await api.updateMethod(id, { color });
+    onSaved();
   };
 
   return (
@@ -68,9 +129,9 @@ export default function EditMethodsModal({ methods: initialMethods, onClose, onS
       okText="完成"
       cancelButtonProps={{ style: { display: 'none' } }}
       maskClosable={false}
-      width={520}
+      width={560}
     >
-      <Typography.Paragraph type="secondary">管理互换方式选项，排序决定表格排列顺序</Typography.Paragraph>
+      <Typography.Paragraph type="secondary">管理互换方式选项，颜色与排序会同步到所有视图</Typography.Paragraph>
       <Space direction="vertical" style={{ width: '100%' }} size="small">
         {methods.map((m, i) => (
           <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -79,9 +140,13 @@ export default function EditMethodsModal({ methods: initialMethods, onClose, onS
               <Button size="small" icon={<ArrowDownOutlined />} disabled={i === methods.length - 1} onClick={() => moveDown(i)} />
             </Space.Compact>
             <span style={{ width: 24, textAlign: 'center', color: '#999' }}>{i + 1}</span>
+            <ColorPickerPopover
+              value={effectiveColor(m) === 'default' ? '' : effectiveColor(m)}
+              onChange={(c) => setColor(m.id, c)}
+              label={m.name || '·'}
+            />
             <Input
               defaultValue={m.name}
-              prefix={<Tag color={chipColor(m.name)} style={{ margin: 0 }}>·</Tag>}
               onBlur={(e) => { if (e.target.value !== m.name) renameMethod(m.id, e.target.value); }}
               onPressEnter={(e) => e.target.blur()}
             />

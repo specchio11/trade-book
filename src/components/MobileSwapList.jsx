@@ -4,7 +4,9 @@ import { DeleteOutlined, PlusOutlined, PictureOutlined, AppstoreAddOutlined } fr
 import { api } from '../api';
 import RegisterItemsModal from './RegisterItemsModal';
 
-const methodColor = (name) => {
+const methodColor = (method) => {
+  if (method?.color) return method.color;
+  const name = method?.name;
   if (!name) return 'default';
   if (name.includes('音律')) return 'purple';
   if (name === 'ACF') return 'blue';
@@ -98,7 +100,7 @@ export default function MobileSwapList({
               <div className="mobile-card-body">
                 <div className="mobile-card-title">
                   <span>{s.nickname || '（未命名）'}</span>
-                  {method && <Tag color={methodColor(method.name)}>{method.name}</Tag>}
+                  {method && <Tag color={methodColor(method)}>{method.name}</Tag>}
                 </div>
                 <div className="mobile-card-meta">
                   {s.qq && <span className="mobile-card-stat">QQ：{s.qq}</span>}

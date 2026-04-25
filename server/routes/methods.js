@@ -33,10 +33,19 @@ router.put('/reorder', async (req, res) => {
 });
 
 router.patch('/:id', async (req, res) => {
-  const { name } = req.body;
+  const { name, color } = req.body;
+  const sets = [];
+  const vals = [];
+  if (name !== undefined) { sets.push(`name = $${sets.length + 1}`); vals.push(name); }
+  if (color !== undefined) { sets.push(`color = $${sets.length + 1}`); vals.push(color || null); }
+  if (sets.length === 0) {
+    const { rows } = await pool.query('SELECT * FROM swap_methods WHERE id = $1 AND user_id = $2', [parseInt(req.params.id), req.userId]);
+    return res.json(rows[0]);
+  }
+  vals.push(parseInt(req.params.id), req.userId);
   const { rows } = await pool.query(
-    'UPDATE swap_methods SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
-    [name, parseInt(req.params.id), req.userId]
+    `UPDATE swap_methods SET ${sets.join(', ')} WHERE id = $${sets.length + 1} AND user_id = $${sets.length + 2} RETURNING *`,
+    vals
   );
   res.json(rows[0]);
 });

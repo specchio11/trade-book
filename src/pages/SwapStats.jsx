@@ -5,7 +5,14 @@ import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
 import RegisterItemsModal from '../components/RegisterItemsModal';
 
-const methodColor = (name) => {
+const methodColor = (method) => {
+  if (method && typeof method === 'object') {
+    if (method.color) return method.color;
+    return nameColor(method.name);
+  }
+  return nameColor(method);
+};
+const nameColor = (name) => {
   if (!name) return 'default';
   if (name.includes('音律')) return 'purple';
   if (name === 'ACF') return 'blue';
@@ -171,7 +178,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
       },
       render: (v, r) => (
         <Select variant="borderless" value={v || undefined} placeholder="选择" style={{ width: '100%' }}
-          options={methods.map(m => ({ value: m.id, label: <Tag color={methodColor(m.name)}>{m.name}</Tag> }))}
+          options={methods.map(m => ({ value: m.id, label: <Tag color={methodColor(m)}>{m.name}</Tag> }))}
           onChange={(val) => handleUpdate(r.id, 'swap_method_id', val)} />
       ),
     },
@@ -338,7 +345,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
             const count = swaps.filter(s => s.swap_method_id === m.id).length;
             if (count === 0) return null;
             return (
-              <Tag key={m.id} color={methodColor(m.name)} style={{ fontSize: 13, padding: '2px 8px', margin: 0 }}>
+              <Tag key={m.id} color={methodColor(m)} style={{ fontSize: 13, padding: '2px 8px', margin: 0 }}>
                 {m.name} {count}
               </Tag>
             );
