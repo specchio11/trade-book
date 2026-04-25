@@ -119,6 +119,7 @@ function InnerTable({ dataSource, columns: rawColumns, onReorder, storageKey, ..
           }}
           dataSource={dataSource}
           columns={columns}
+          sticky={{ offsetHeader: 106 }}
           {...rest}
         />
       </SortableContext>
