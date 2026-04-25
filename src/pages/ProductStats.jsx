@@ -248,15 +248,17 @@ export default function ProductStats({ products, onUpdate, onReloadProduct, onAp
 
   return (
     <>
-      <Space style={{ marginBottom: 12 }}>
-        <span>分组：</span>
-        <Select
-          value={groupBy}
-          options={groupOptions}
-          onChange={setGroupBy}
-          style={{ width: 160 }}
-        />
-      </Space>
+      <div className="filter-bar">
+        <Space>
+          <span>分组：</span>
+          <Select
+            value={groupBy}
+            options={groupOptions}
+            onChange={setGroupBy}
+            style={{ width: 160 }}
+          />
+        </Space>
+      </div>
 
       <SortableTable
         columns={columns}

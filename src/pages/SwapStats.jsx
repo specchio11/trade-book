@@ -358,7 +358,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+      <div className="filter-bar">
         <Space wrap>
           <span>分组：</span>
           <Select value={groupBy} options={groupOptions} onChange={setGroupBy} style={{ width: 180 }} />
