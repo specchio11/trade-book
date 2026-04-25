@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button, Input, InputNumber, Select, Checkbox, Tag, Popconfirm, App, Tooltip, Space } from 'antd';
-import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined, AppstoreAddOutlined, DoubleLeftOutlined, DoubleRightOutlined } from '@ant-design/icons';
+import { Button, Input, InputNumber, Select, Checkbox, Tag, Popconfirm, App, Tooltip, Space, Popover, message } from 'antd';
+import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined, AppstoreAddOutlined, DoubleLeftOutlined, DoubleRightOutlined, EyeOutlined, CopyOutlined } from '@ant-design/icons';
 import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
 import RegisterItemsModal from '../components/RegisterItemsModal';
@@ -33,6 +33,33 @@ function InlineEdit({ value, onCommit, placeholder }) {
       onBlur={() => { if (local !== (value || '')) onCommit(local); }}
       onPressEnter={(e) => e.target.blur()}
     />
+  );
+}
+
+function AddressPopover({ address }) {
+  const text = (address || '').trim();
+  const handleCopy = async (e) => {
+    e.stopPropagation();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      message.success('已复制');
+    } catch {
+      message.error('复制失败');
+    }
+  };
+  const content = (
+    <div style={{ maxWidth: 280 }}>
+      <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginBottom: 8, color: text ? undefined : '#999' }}>
+        {text || '（暂无地址）'}
+      </div>
+      <Button size="small" type="primary" icon={<CopyOutlined />} disabled={!text} onClick={handleCopy}>复制</Button>
+    </div>
+  );
+  return (
+    <Popover content={content} trigger="click" placement="left" title="地址">
+      <Button size="small" type="text" icon={<EyeOutlined />} onClick={(e) => e.stopPropagation()} />
+    </Popover>
   );
 }
 
@@ -197,7 +224,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
       render: (v, r) => <InlineEdit value={v} placeholder="—" onCommit={(val) => handleUpdate(r.id, 'received_product', val)} />,
     },
     {
-      title: '对方制品图', dataIndex: 'cover_image', width: 80, align: 'center',
+      title: '制品图', dataIndex: 'cover_image', width: 80, align: 'center',
       render: (cover, r) => (
         <div className="preview-thumb" onClick={() => openSwapImages(r)}>
           {cover ? <img src={cover.data} alt="" /> : <PictureOutlined style={{ fontSize: 22, color: '#bbb' }} />}
@@ -206,7 +233,12 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
     },
     {
       title: '地址', dataIndex: 'address', width: 220,
-      render: (v, r) => <InlineEdit value={v} placeholder="互寄地址" onCommit={(val) => handleUpdate(r.id, 'address', val)} />,
+      render: (v, r) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <InlineEdit value={v} placeholder="互寄地址" onCommit={(val) => handleUpdate(r.id, 'address', val)} />
+          <AddressPopover address={v} />
+        </div>
+      ),
     },
     {
       title: '备注', dataIndex: 'notes', width: 160,
