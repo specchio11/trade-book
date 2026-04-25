@@ -63,7 +63,7 @@ const ResizableTitle = (props) => {
   );
 };
 
-function InnerTable({ dataSource, columns: rawColumns, onReorder, storageKey, ...rest }) {
+function InnerTable({ dataSource, columns: rawColumns, onReorder, storageKey, scroll, ...rest }) {
   // Track widths so columns are resizable
   const [widths, setWidths] = useState(() => {
     if (storageKey) {
@@ -119,7 +119,7 @@ function InnerTable({ dataSource, columns: rawColumns, onReorder, storageKey, ..
           }}
           dataSource={dataSource}
           columns={columns}
-          sticky={{ offsetHeader: 156 }}
+          scroll={{ y: 'calc(100vh - 260px)', ...(scroll || {}) }}
           {...rest}
         />
       </SortableContext>
