@@ -248,7 +248,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
           qq: values.qq || '',
           swap_method_id: values.method || null,
           received_product: values.received_product || '',
-          address: isMail ? (values.address || '') : '',
+          address: values.address || '',
           notes: values.notes || '',
           items,
           images: images.map(i => i.data),
@@ -260,7 +260,7 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
           qq: values.qq || '',
           swap_method_id: values.method || null,
           received_product: values.received_product || '',
-          address: isMail ? (values.address || '') : '',
+          address: values.address || '',
           notes: values.notes || '',
         });
         await api.updateSwapItems(swap.id, items);
@@ -315,11 +315,9 @@ export default function RegisterItemsModal({ swap, products, methods = [], onClo
           </Radio.Group>
         </Form.Item>
 
-        {isMail && (
-          <Form.Item label="地址" name="address" rules={[{ required: true, message: '互寄请填写地址' }]}>
-            <Input.TextArea rows={2} placeholder="收件人 / 电话 / 地址" />
-          </Form.Item>
-        )}
+        <Form.Item label="地址" name="address">
+          <Input.TextArea rows={2} placeholder="收件人 / 电话 / 地址（选填）" />
+        </Form.Item>
 
         <Form.Item label="对方互换制品" name="received_product">
           <Input placeholder="对方给我的制品名称" />
