@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Button, Input, InputNumber, Select, Checkbox, Tag, Popconfirm, App, Tooltip, Space, Popover, message } from 'antd';
-import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined, AppstoreAddOutlined, DoubleLeftOutlined, DoubleRightOutlined, EyeOutlined, CopyOutlined } from '@ant-design/icons';
+import { DeleteOutlined, PlusOutlined, SettingOutlined, PictureOutlined, AppstoreAddOutlined, DoubleLeftOutlined, DoubleRightOutlined, EyeOutlined, CopyOutlined, ProfileOutlined } from '@ant-design/icons';
 import { api } from '../api';
 import SortableTable, { DragHandle } from '../components/SortableTable';
 import RegisterItemsModal from '../components/RegisterItemsModal';
+import SwapSummaryModal from '../components/SwapSummaryModal';
 
 const methodColor = (method) => {
   if (method && typeof method === 'object') {
@@ -67,6 +68,7 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
   const { message } = App.useApp();
   const [groupBy, setGroupBy] = useState(null);
   const [registerSwap, setRegisterSwap] = useState(null);
+  const [summarySwap, setSummarySwap] = useState(null);
   const [itemsCollapsed, setItemsCollapsed] = useState(() => {
     try {
       const v = localStorage.getItem('swapItemsCollapsed');
@@ -310,9 +312,12 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
           }
     ] : []),
     {
-      title: '操作', key: 'action', width: 110, align: 'center', fixed: 'right',
+      title: '操作', key: 'action', width: 140, align: 'center', fixed: 'right',
       render: (_, r) => (
         <Space size={0}>
+          <Tooltip title="发货清单">
+            <Button type="text" icon={<ProfileOutlined />} onClick={() => setSummarySwap(r)} />
+          </Tooltip>
           <Tooltip title="只登记互换制品信息">
             <Button type="text" icon={<AppstoreAddOutlined />} onClick={() => setRegisterSwap(r)} />
           </Tooltip>
@@ -428,6 +433,15 @@ export default function SwapStats({ swaps, products, methods, onUpdate, onReload
             onReloadSwap(swapId);
             affectedProductIds.forEach(pid => onReloadProduct(pid));
           }}
+        />
+      )}
+
+      {summarySwap && (
+        <SwapSummaryModal
+          swap={summarySwap}
+          products={products}
+          methods={methods}
+          onClose={() => setSummarySwap(null)}
         />
       )}
     </>

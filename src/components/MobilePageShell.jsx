@@ -57,7 +57,7 @@ function MobilePageShell({
 export default function MobileOrModal({ children, ...props }) {
   const isMobile = useIsMobile();
   if (isMobile) return <MobilePageShell {...props}>{children}</MobilePageShell>;
-  return <Modal {...props}>{children}</Modal>;
+  return <Modal centered {...props}>{children}</Modal>;
 }
 
 export { MobilePageShell };

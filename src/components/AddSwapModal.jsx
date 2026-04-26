@@ -42,6 +42,7 @@ export default function AddSwapModal({ products, methods, onClose, onCreated }) 
   return (
     <Modal
       open
+      centered
       title="添加互换"
       onCancel={onClose}
       onOk={handleSubmit}

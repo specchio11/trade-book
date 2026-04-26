@@ -106,6 +106,7 @@ export default function UserSwitcher({ currentUser, onUserChange, onLogout }) {
 
       <Modal
         open={showModal}
+        centered
         title="管理用户"
         onCancel={() => setShowModal(false)}
         footer={null}

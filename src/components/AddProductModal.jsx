@@ -43,6 +43,7 @@ export default function AddProductModal({ onClose, onCreated }) {
   return (
     <Modal
       open
+      centered
       title="添加制品"
       onCancel={onClose}
       onOk={handleSubmit}

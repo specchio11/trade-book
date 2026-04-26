@@ -125,6 +125,7 @@ export default function EditMethodsModal({ methods: initialMethods, onClose, onS
   return (
     <Modal
       open
+      centered
       title="编辑互换方式"
       onCancel={onClose}
       onOk={onClose}

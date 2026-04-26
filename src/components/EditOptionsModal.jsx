@@ -55,6 +55,7 @@ export default function EditOptionsModal({
   return (
     <Modal
       open
+      centered
       title={title}
       onCancel={onClose}
       onOk={onClose}
