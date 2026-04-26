@@ -25,6 +25,22 @@ export default function SwapSummaryModal({ swap, products, methods, onClose }) {
   const totalKinds = items.length;
   const totalQty = items.reduce((s, it) => s + (it.quantity || 0), 0);
 
+  // Detect types where the swap covers every product (quantity > 0 for all of them).
+  const qtyByProduct = new Map(items.map(it => [it.product_id, it.quantity || 0]));
+  const typeMap = new Map(); // type_id -> { name, products: [] }
+  for (const p of products) {
+    if (!p.type_id) continue;
+    if (!typeMap.has(p.type_id)) typeMap.set(p.type_id, { name: p.type_name || '类型', products: [] });
+    typeMap.get(p.type_id).products.push(p);
+  }
+  const fullTypes = [];
+  for (const [tid, info] of typeMap) {
+    if (info.products.length === 0) continue;
+    if (info.products.every(p => (qtyByProduct.get(p.id) || 0) > 0)) {
+      fullTypes.push({ id: tid, name: info.name });
+    }
+  }
+
   const copyAddress = async () => {
     const text = (swap.address || '').trim();
     if (!text) return;
@@ -76,8 +92,13 @@ export default function SwapSummaryModal({ swap, products, methods, onClose }) {
 
       <Divider style={{ margin: '12px 0' }} />
 
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Title level={5} style={{ margin: 0 }}>需发出制品</Title>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <Title level={5} style={{ margin: 0 }}>需发出制品</Title>
+          {fullTypes.map(t => (
+            <Tag key={t.id} color="gold" style={{ margin: 0 }}>全套·{t.name}</Tag>
+          ))}
+        </div>
         {totalKinds > 0 && (
           <Text type="secondary">{totalKinds} 种 · 共 {totalQty} 件</Text>
         )}
